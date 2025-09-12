@@ -43,13 +43,14 @@ def main():
                         help='Máximo lag a considerar (por defecto, igual a ph)')
     
     args = parser.parse_args()
-    
+    input_folder_dir = "input_csv_files/"+args.input_file
+    output_folder_dir = "output_csv_files/"+args.output_dir
     # Crear directorio de salida si no existe
-    os.makedirs(args.output_dir, exist_ok=True)
+    os.makedirs(output_folder_dir, exist_ok=True)
     
     # Cargar datos
-    print(f"Cargando datos desde {args.input_file}...")
-    df = pd.read_csv(args.input_file)
+    print(f"Cargando datos desde {input_folder_dir}...")
+    df = pd.read_csv(input_folder_dir)
     
     # Obtener nombre de la columna objetivo
     columns = df.columns.tolist()
@@ -67,8 +68,8 @@ def main():
         
         # Ejecutar selección de atributos
         fs_results = select_features(
-            args.input_file,
-            os.path.join(args.output_dir, 'feature_selection'),
+            input_folder_dir,
+            os.path.join(output_folder_dir, 'feature_selection'),
             target_col,
             method=args.fs_method,
             n_features=args.fs_n_features,
@@ -94,7 +95,7 @@ def main():
         input_for_transform = filtered_csv
     else:
         # Usar el CSV original para la transformación
-        input_for_transform = args.input_file
+        input_for_transform = input_folder_dir
     
     # Ejecutar transformación de series temporales
     print("\nEjecutando transformación de series temporales...")
@@ -102,10 +103,10 @@ def main():
     # Importar el script de transformación
     import sys
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from time_series_transformer import transform_time_series
+    from time_series_transformer_optimized import transform_time_series
     
     # Definir archivo de salida para la transformación
-    output_file = os.path.join(args.output_dir, 'transformed_data.csv')
+    output_file = os.path.join(output_folder_dir, 'transformed_data.csv')
     
     # Ejecutar transformación
     transform_time_series(input_for_transform, output_file, args.fv, args.fh, args.ph)

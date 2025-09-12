@@ -9,8 +9,8 @@ with multiple variables and transforms it into a format where each row contains:
 - Future values of the target variable (for prediction)
 
 Parameters:
-    input_file: Path to the input CSV file
-    output_file: Path to the output CSV file
+    input_file: Name of the input CSV file (the folder is added in the main)
+    output_file: Name of the output CSV file (the folder is added in the main)
     fv: Forecast Variable - index of the column to be predicted
     fh: Forecast Horizon - number of future values to predict
     ph: Past History - number of past values to use for prediction
@@ -104,7 +104,7 @@ def main():
     args = parser.parse_args()
     
     # Transform the time series data
-    transform_time_series(args.input_file, args.output_file, args.fv, args.fh, args.ph)
+    transform_time_series("input_csv_files/"+args.input_file, "output_csv_files/"+args.output_file, args.fv, args.fh, args.ph)
 
 
 if __name__ == '__main__':
