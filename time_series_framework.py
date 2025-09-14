@@ -44,7 +44,7 @@ def main():
     
     args = parser.parse_args()
     input_folder_dir = "input_csv_files/"+args.input_file
-    output_folder_dir = "output_csv_files/"+args.output_dir
+    output_folder_dir = "results/"+args.output_dir
     # Crear directorio de salida si no existe
     os.makedirs(output_folder_dir, exist_ok=True)
     

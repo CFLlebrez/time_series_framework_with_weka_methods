@@ -34,8 +34,8 @@ def transform_time_series(input_file, output_file, fv, fh, ph):
         ph (int): Past history (number of past values to use)
     """
     # Read the input CSV file
-    print(f"Reading input file: {input_file}")
-    df = pd.read_csv(input_file)
+    print(f"Reading input file: input_csv_files/{input_file}")
+    df = pd.read_csv("input_csv_files/" + input_file)
     
     # Get column names
     columns = df.columns.tolist()
@@ -89,8 +89,8 @@ def transform_time_series(input_file, output_file, fv, fh, ph):
     transformed_df = pd.DataFrame(transformed_data, columns=transformed_columns)
     
     # Save the transformed data to the output CSV file
-    print(f"Saving transformed data to: {output_file}")
-    transformed_df.to_csv(output_file, index=False)
+    print(f"Saving transformed data to: output_csv_files/{output_file.strip(".csv")}_fv{fv}_fh{fh}_ph{ph}.csv")
+    transformed_df.to_csv(f"output_csv_files/{output_file.strip(".csv")}_fv{fv}_fh{fh}_ph{ph}.csv", index=False)
     print(f"Transformation complete. Created {len(transformed_df)} samples.")
 
 
