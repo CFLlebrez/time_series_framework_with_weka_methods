@@ -4,3 +4,4 @@ statsmodels
 pandas
 matplotlib
 scikit-learn
+statsmodels

@@ -93,7 +93,7 @@ def prepare_lagged_data(df, target_col, max_lag, include_target=True):
     """
     # Crear copia del DataFrame
     data = df.copy()
-    
+
     # Obtener lista de columnas
     columns = data.columns.tolist()
     
