@@ -47,5 +47,6 @@
 2. Otros parámetros de selección de atributos.
 3. Mirar los ficheros de selección de atributos en detalle para comprobar cómo funcionan.
 (cambiar el método de adición del flag de selección de atributos y ver qué cambiar para que se pueda utilizar el transformer de forma independiente al framework tras haber añadido parámetros).
+4. Intentar ver por qué al hacer el filtrado pierde 1 fila (con el lag 3 necesita desprenderse de 3 filas, pero empieza en la 5ª fecha en vez de en la 4ª)
 
 
