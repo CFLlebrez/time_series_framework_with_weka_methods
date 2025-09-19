@@ -43,8 +43,9 @@ def main():
                         help='Máximo lag a considerar (por defecto, igual a ph)')
     
     args = parser.parse_args()
-    input_folder_dir = "input_csv_files/"+args.input_file
-    output_folder_dir = "results/"+args.output_dir
+    original = args.fv
+    input_folder_dir = os.path.join("input_csv_files", args.input_file)
+    output_folder_dir = os.path.join("results", args.output_dir)
     # Crear directorio de salida si no existe
     os.makedirs(output_folder_dir, exist_ok=True)
     
@@ -93,9 +94,15 @@ def main():
         
         # Usar el CSV filtrado para la transformación
         input_for_transform = filtered_csv
+        
+        # ⚡ En caso de selección de atributos -> usar última columna como fv
+        df_filtered = pd.read_csv(filtered_csv)
+        fv_index = df_filtered.shape[1] - 1
+        print(f"Usando la última columna como variable objetivo: {df_filtered.columns[fv_index]} (índice {fv_index})")
     else:
         # Usar el CSV original para la transformación
         input_for_transform = input_folder_dir
+        fv_index = args.fv  # Mantener el índice pasado por el usuario
     
     # Ejecutar transformación de series temporales
     print("\nEjecutando transformación de series temporales...")
@@ -108,11 +115,12 @@ def main():
     # Definir archivo de salida para la transformación
     output_file = os.path.join(output_folder_dir, 'transformed_data.csv')
     
-    # Ejecutar transformación
-    transform_time_series(input_for_transform, output_file, args.fv, args.fh, args.ph)
+    # Ejecutar transformación con el fv correcto
+    transform_time_series(input_for_transform, output_file, fv_index, args.fh, args.ph, original)
     
     print(f"\nTransformación completada. Resultados guardados en: {output_file}")
     print("\nProceso completo finalizado.")
+
 
 
 if __name__ == '__main__':

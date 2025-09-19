@@ -258,12 +258,38 @@ def select_features(input_file, output_dir, target_col, method='random_forest',
         )
     
     # Generar CSV filtrado
+        # Generar CSV filtrado
     filtered_csv_path = None
     if generate_filtered_csv:
         if verbose:
-            print("Generando CSV filtrado con características seleccionadas...")
+            print("Generando CSV filtrado con características seleccionadas + variable objetivo...")
         filtered_csv_path = os.path.join(output_dir, f"filtered_data_{method}.csv")
-        filter_data_with_selected_features(X_lagged, selected_features, filtered_csv_path)
+        
+        # Subconjunto con features seleccionadas
+        X_selected = X_lagged[selected_features]
+        
+        # Concatenar variable objetivo como última columna
+        df_filtered = pd.concat([X_selected, y], axis=1)
+        
+                # 🔍 Comprobar si la primera columna del dataset original es fecha
+        first_col = df.columns[0]
+        try:
+            parsed = pd.to_datetime(df[first_col], errors='coerce')
+            is_datetime = parsed.notna().sum() > 0.9 * len(parsed)  # al menos 90% convertibles
+        except Exception:
+            is_datetime = False
+        
+        # Si es fecha, añadirla como primera columna en el CSV final
+        if is_datetime:
+            # Usar el mismo índice que X_lagged / y (para evitar desajuste de longitudes)
+            date_aligned = df.loc[X_lagged.index, first_col]
+            df_filtered.insert(0, first_col, date_aligned.values)
+
+            if verbose:
+                print(f"Columna de fecha detectada y preservada: '{first_col}'")
+        
+        # Guardar en CSV
+        df_filtered.to_csv(filtered_csv_path, index=False)
     
     # Devolver resultados
     results = {
@@ -276,3 +302,4 @@ def select_features(input_file, output_dir, target_col, method='random_forest',
     }
     
     return results
+

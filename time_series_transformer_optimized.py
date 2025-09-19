@@ -21,8 +21,7 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 
-
-def transform_time_series(input_file, output_file, fv, fh, ph):
+def transform_time_series(input_file, output_file, fv, fh, ph, original_fv):
     """
     Transform time series data for regression tasks.
     
@@ -32,10 +31,11 @@ def transform_time_series(input_file, output_file, fv, fh, ph):
         fv (int): Index of the forecast variable column
         fh (int): Forecast horizon (number of future values to predict)
         ph (int): Past history (number of past values to use)
+        original (int): Original fv in case there was feature selection.
     """
     # Read the input CSV file
-    print(f"Reading input file: input_csv_files/{input_file}")
-    df = pd.read_csv("input_csv_files/" + input_file)
+    print(f"Reading input file: {input_file}")
+    df = pd.read_csv(input_file)
     
     # Get column names
     columns = df.columns.tolist()
@@ -89,8 +89,11 @@ def transform_time_series(input_file, output_file, fv, fh, ph):
     transformed_df = pd.DataFrame(transformed_data, columns=transformed_columns)
     
     # Save the transformed data to the output CSV file
-    print(f"Saving transformed data to: output_csv_files/{output_file.strip(".csv")}_fv{fv}_fh{fh}_ph{ph}.csv")
-    transformed_df.to_csv(f"output_csv_files/{output_file.strip(".csv")}_fv{fv}_fh{fh}_ph{ph}.csv", index=False)
+    feature_selection_flag = ""
+    if fv != original_fv:
+        feature_selection_flag = "_with_fs"
+    print(f"Saving transformed data to: {output_file.strip(".csv")}{feature_selection_flag}_fv{original_fv}_fh{fh}_ph{ph}.csv")
+    transformed_df.to_csv(f"{output_file.strip(".csv")}{feature_selection_flag}_fv{original_fv}_fh{fh}_ph{ph}.csv", index=False)
     print(f"Transformation complete. Created {len(transformed_df)} samples.")
 
 
