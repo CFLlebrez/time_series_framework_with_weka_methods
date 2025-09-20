@@ -49,4 +49,10 @@
 (cambiar el método de adición del flag de selección de atributos y ver qué cambiar para que se pueda utilizar el transformer de forma independiente al framework tras haber añadido parámetros).
 4. Intentar ver por qué al hacer el filtrado pierde 1 fila (con el lag 3 necesita desprenderse de 3 filas, pero empieza en la 5ª fecha en vez de en la 4ª)
 
+## 20/09/2025 ##
+- Observaciones: El filtrado pierde una fila efectivamente (aparte de las perdidas en función de máx lag por defecto 4). Al transformar el filtrado se pierden más (correspondientes a ph para hacer los lags especificados).
+- Borrado el test inicial hecho con random_forest.
+- Obtenido un csv más amplio para tener más libertad a la hora de obtener parámetros. (Otra vez manualmente he quitado la ultima columna, seguro que se puede quitar utilizando un rango).
+
+- Cambio de workflow: Actualmente hacía primero seleccion de atributos y posteriormente transformación. La idea es hacer primero una transformación para obtener todas las variables sobre las que seleccionar y posteriormente hacer la selección.
 

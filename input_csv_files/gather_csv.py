@@ -5,7 +5,7 @@ import pandas as pd
 codigoProvincia = 41       # Sevilla
 codigoEstacion = 2     # código real de estación, no "SE01"
 fhInicio = "2022-01-01"
-fhFin = "2022-01-15"
+fhFin = "2022-04-01"
 lgEt0 = "false"
 
 url = f"https://www.juntadeandalucia.es/agriculturaypesca/ifapa/riaws/datosdiarios/{codigoProvincia}/{codigoEstacion}/{fhInicio}/{fhFin}/{lgEt0}"
@@ -17,6 +17,6 @@ resp.raise_for_status()
 
 data = resp.json()
 df = pd.DataFrame(data)
-df.to_csv("input_csv_files/estacion.csv", index=False, encoding="utf-8")
+df.to_csv("input_csv_files/estacion_amplio.csv", index=False, encoding="utf-8")
 
-print("✅ Datos guardados en estacion.csv")
+print("✅ Datos guardados en estacion_amplio.csv")
