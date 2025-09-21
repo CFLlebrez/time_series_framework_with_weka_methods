@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """
-Script principal para integrar la selección de atributos con la transformación de series temporales.
+Script principal para integrar la transformación de series temporales
+y la selección de atributos (opcional).
 
-Este script combina la funcionalidad de selección de atributos con la transformación
-de series temporales para crear un flujo de trabajo completo.
+Nuevo flujo:
+1. Primero se transforma el dataset (lags + horizontes).
+2. Después, si se indica, se aplica selección de atributos sobre el CSV transformado.
 """
 
 import os
@@ -28,57 +30,89 @@ def main():
     parser.add_argument('--fh', type=int, required=True, help='Forecast Horizon - número de valores futuros a predecir')
     parser.add_argument('--ph', type=int, required=True, help='Past History - número de valores pasados a utilizar')
     
+    # Argumentos para columna temporal
+    parser.add_argument('--time_col', type=str, required=True,
+                        help='Nombre de la columna temporal (ej. fecha, date, timestamp)')
+    
     # Argumentos para la selección de atributos
     parser.add_argument('--feature_selection', action='store_true', help='Aplicar selección de atributos')
     parser.add_argument('--fs_method', type=str, default='random_forest',
                         choices=['pearson', 'ccf', 'mutual_info', 'random_forest', 
-                                'lasso', 'elastic_net', 'rfe', 'granger', 'pca', 
-                                'spectral', 'sequential', 'genetic'],
+                                 'lasso', 'elastic_net', 'rfe', 'granger', 'pca', 
+                                 'spectral', 'sequential', 'genetic'],
                         help='Método de selección de atributos')
     parser.add_argument('--fs_n_features', type=int, default=None,
                         help='Número de atributos a seleccionar')
     parser.add_argument('--fs_threshold', type=float, default=None,
                         help='Umbral para la selección de atributos')
-    parser.add_argument('--fs_max_lag', type=int, default=None,
-                        help='Máximo lag a considerar (por defecto, igual a ph)')
     
     args = parser.parse_args()
-    original = args.fv
+
     input_folder_dir = os.path.join("input_csv_files", args.input_file)
     output_folder_dir = os.path.join("results", args.output_dir)
-    # Crear directorio de salida si no existe
     os.makedirs(output_folder_dir, exist_ok=True)
     
-    # Cargar datos
+    # Cargar datos originales (solo para identificar variable objetivo)
     print(f"Cargando datos desde {input_folder_dir}...")
     df = pd.read_csv(input_folder_dir)
+
+    # Verificar que la columna temporal existe
+    if args.time_col not in df.columns:
+        raise ValueError(f"La columna temporal '{args.time_col}' no existe en el CSV. "
+                         f"Columnas disponibles: {df.columns.tolist()}")
     
-    # Obtener nombre de la columna objetivo
+    # Forzar parseo a datetime
+    df[args.time_col] = pd.to_datetime(df[args.time_col], errors='coerce')
+    if df[args.time_col].isna().all():
+        raise ValueError(f"No se pudo convertir la columna '{args.time_col}' a formato datetime.")
+    
     columns = df.columns.tolist()
+    
     if args.fv < 0 or args.fv >= len(columns):
         raise ValueError(f"FV index {args.fv} está fuera de rango. Rango válido: 0-{len(columns)-1}")
+    
     target_col = columns[args.fv]
     print(f"Variable objetivo: {target_col} (índice {args.fv})")
     
-    # Determinar máximo lag para selección de atributos
-    max_lag = args.fs_max_lag if args.fs_max_lag is not None else args.ph
+    # --- Paso 1: Transformación de series temporales ---
+    print("\nEjecutando transformación de series temporales...")
+    import sys
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from time_series_transformer_optimized import transform_time_series
     
-    # Aplicar selección de atributos si se solicita
+    output_file = os.path.join(output_folder_dir, f'transformed_data_fv{args.fv}_fh{args.fh}_ph{args.ph}.csv')
+    
+    if not os.path.isfile(output_file):  # ✅ corregido: solo crea si no existe
+        transform_time_series(
+            input_folder_dir,
+            output_file,
+            args.fv,
+            args.fh,
+            args.ph,
+            args.fv,         # original_fv = mismo índice en este punto
+            args.time_col    # ✅ se pasa la columna temporal explícitamente
+        )
+        print(f"\nTransformación completada. Resultados guardados en: {output_file}")
+    else:
+        print(f"\nEl fichero {output_file} ya estaba creado.")
+    
+    transformed_csv = output_file
+    
+    # --- Paso 2: Selección de atributos (opcional) ---
     if args.feature_selection:
         print(f"\nAplicando selección de atributos usando método '{args.fs_method}'...")
         
-        # Ejecutar selección de atributos
         fs_results = select_features(
-            input_folder_dir,
-            os.path.join(output_folder_dir, 'feature_selection'),
+            transformed_csv,
+            os.path.join(output_folder_dir, f'feature_selection_{args.fs_method}'),
             target_col,
             method=args.fs_method,
             n_features=args.fs_n_features,
             threshold=args.fs_threshold,
-            max_lag=max_lag
+            max_lag=0,           # No se prueban lags, se hace selección sobre el csv transformado
+            time_col=args.time_col  # ✅ ahora se informa la columna temporal
         )
         
-        # Mostrar características seleccionadas
         selected_features = fs_results['selected_features']
         print(f"\nCaracterísticas seleccionadas ({len(selected_features)}):")
         for i, feature in enumerate(selected_features, 1):
@@ -88,39 +122,10 @@ def main():
             else:
                 print(f"{i}. {feature} (importancia: {importance})")
         
-        # Obtener ruta al CSV filtrado
         filtered_csv = fs_results['filtered_csv_path']
         print(f"\nCSV filtrado generado: {filtered_csv}")
-        
-        # Usar el CSV filtrado para la transformación
-        input_for_transform = filtered_csv
-        
-        # ⚡ En caso de selección de atributos -> usar última columna como fv
-        df_filtered = pd.read_csv(filtered_csv)
-        fv_index = df_filtered.shape[1] - 1
-        print(f"Usando la última columna como variable objetivo: {df_filtered.columns[fv_index]} (índice {fv_index})")
-    else:
-        # Usar el CSV original para la transformación
-        input_for_transform = input_folder_dir
-        fv_index = args.fv  # Mantener el índice pasado por el usuario
     
-    # Ejecutar transformación de series temporales
-    print("\nEjecutando transformación de series temporales...")
-    
-    # Importar el script de transformación
-    import sys
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from time_series_transformer_optimized import transform_time_series
-    
-    # Definir archivo de salida para la transformación
-    output_file = os.path.join(output_folder_dir, 'transformed_data.csv')
-    
-    # Ejecutar transformación con el fv correcto
-    transform_time_series(input_for_transform, output_file, fv_index, args.fh, args.ph, original)
-    
-    print(f"\nTransformación completada. Resultados guardados en: {output_file}")
     print("\nProceso completo finalizado.")
-
 
 
 if __name__ == '__main__':

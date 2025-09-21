@@ -78,45 +78,33 @@ def create_feature_selector(method, n_features=None, threshold=None, **kwargs):
         raise ValueError(f"Método desconocido: {method}")
 
 
-def prepare_lagged_data(df, target_col, max_lag, include_target=True):
+def prepare_data_for_selection(df, target_col, time_col=None, include_target=True):
     """
-    Prepara datos con lags para selección de características.
+    Prepara los datos para la selección de características, sin generar lags.
+    Los lags ya deben estar creados en la fase de transformación.
     
     Args:
-        df (DataFrame): DataFrame original.
+        df (DataFrame): DataFrame ya transformado (con lags y horizontes).
         target_col (str): Nombre de la columna objetivo.
-        max_lag (int): Máximo lag a considerar.
         include_target (bool): Si es True, incluye la variable objetivo en los predictores.
         
     Returns:
-        tuple: (X_lagged, y) donde X_lagged contiene todas las variables con lags y y es la variable objetivo.
+        tuple: (X, y) donde X son las variables predictoras y y es la variable objetivo.
     """
-    # Crear copia del DataFrame
     data = df.copy()
+    
+    # Construir X
+    cols_to_use = data.columns.tolist()
+    if time_col:
+        cols_to_use = [c for c in cols_to_use if c != time_col]
+    if not include_target:
+        cols_to_use = [c for c in cols_to_use if c != target_col]
 
-    # Obtener lista de columnas
-    columns = data.columns.tolist()
-    
-    # Crear DataFrame para almacenar datos con lags
-    X_lagged = pd.DataFrame(index=data.index)
-    
-    # Añadir lags para cada columna
-    for col in columns:
-        # Saltar la columna objetivo si no se debe incluir
-        if col == target_col and not include_target:
-            continue
-        
-        # Añadir lags
-        for lag in range(1, max_lag + 1):
-            X_lagged[f"{col}_lag{lag}"] = data[col].shift(lag)
-    
-    # Eliminar filas con NaN
-    X_lagged = X_lagged.dropna()
-    
-    # Preparar variable objetivo (alineada con X_lagged)
-    y = data.loc[X_lagged.index, target_col]
-    
-    return X_lagged, y
+    X = data[cols_to_use].copy()
+    y = data[target_col].copy()
+
+    return X, y
+
 
 
 def generate_feature_importance_report(selector, output_dir, prefix='feature_importance'):
@@ -195,43 +183,34 @@ def filter_data_with_selected_features(X, selected_features, output_file=None):
 
 
 def select_features(input_file, output_dir, target_col, method='random_forest', 
-                   n_features=None, threshold=None, max_lag=10, include_target=True,
+                   n_features=None, threshold=None, time_col=None, include_target=True,
                    generate_report=True, generate_filtered_csv=True, **kwargs):
     """
     Función principal para selección de características en series temporales.
-    
-    Args:
-        input_file (str): Ruta al archivo CSV de entrada.
-        output_dir (str): Directorio para guardar los resultados.
-        target_col (str): Nombre de la columna objetivo.
-        method (str): Método de selección de características.
-        n_features (int, optional): Número de características a seleccionar.
-        threshold (float, optional): Umbral para la selección de características.
-        max_lag (int): Máximo lag a considerar.
-        include_target (bool): Si es True, incluye la variable objetivo en los predictores.
-        generate_report (bool): Si es True, genera informe y visualizaciones.
-        generate_filtered_csv (bool): Si es True, genera CSV filtrado.
-        **kwargs: Argumentos adicionales específicos para cada método.
-        
-    Returns:
-        dict: Diccionario con resultados y rutas a archivos generados.
+    (Se asume que los lags ya están creados antes de esta fase).
     """
     verbose = kwargs.get('verbose', True)
     
     # Crear directorio si no existe
     os.makedirs(output_dir, exist_ok=True)
     
-    # Cargar datos
+    # Cargar datos transformados
     if verbose:
         print(f"Cargando datos desde {input_file}...")
     df = pd.read_csv(input_file)
+
+    # Separar columna temporal si existe
+    fechas = None
+    if time_col and time_col in df.columns:
+        fechas = df[time_col].copy()
+        df = df.drop(columns=[time_col])
     
-    # Preparar datos con lags
+    # Preparar datos (sin generar lags, ya vienen creados)
     if verbose:
-        print(f"Preparando datos con lags (max_lag={max_lag})...")
-    X_lagged, y = prepare_lagged_data(df, target_col, max_lag, include_target)
+        print("Preparando datos para selección (sin recalcular lags)...")
+    X, y = prepare_data_for_selection(df, target_col, time_col=None, include_target=include_target)
     
-    # Crear selector de características
+    # Crear selector
     if verbose:
         print(f"Creando selector de características usando método '{method}'...")
     selector = create_feature_selector(method, n_features, threshold, verbose=verbose, **kwargs)
@@ -239,17 +218,15 @@ def select_features(input_file, output_dir, target_col, method='random_forest',
     # Ajustar selector
     if verbose:
         print("Ajustando selector de características...")
-    selector.fit(X_lagged, y)
+    selector.fit(X, y)
     
     # Obtener características seleccionadas
     selected_features = selector.get_selected_features()
-    
     if verbose:
-        print(f"Seleccionadas {len(selected_features)} características de {X_lagged.shape[1]}")
+        print(f"Seleccionadas {len(selected_features)} características de {X.shape[1]}")
     
-    # Generar informe y visualizaciones
-    report_path = None
-    plot_path = None
+    # Informe
+    report_path, plot_path = None, None
     if generate_report:
         if verbose:
             print("Generando informe de importancia de características...")
@@ -257,8 +234,7 @@ def select_features(input_file, output_dir, target_col, method='random_forest',
             selector, output_dir, prefix=f"{method}_feature_importance"
         )
     
-    # Generar CSV filtrado
-        # Generar CSV filtrado
+    # CSV filtrado
     filtered_csv_path = None
     if generate_filtered_csv:
         if verbose:
@@ -266,33 +242,16 @@ def select_features(input_file, output_dir, target_col, method='random_forest',
         filtered_csv_path = os.path.join(output_dir, f"filtered_data_{method}.csv")
         
         # Subconjunto con features seleccionadas
-        X_selected = X_lagged[selected_features]
-        
-        # Concatenar variable objetivo como última columna
+        X_selected = X[selected_features]
         df_filtered = pd.concat([X_selected, y], axis=1)
-        
-                # 🔍 Comprobar si la primera columna del dataset original es fecha
-        first_col = df.columns[0]
-        try:
-            parsed = pd.to_datetime(df[first_col], errors='coerce')
-            is_datetime = parsed.notna().sum() > 0.9 * len(parsed)  # al menos 90% convertibles
-        except Exception:
-            is_datetime = False
-        
-        # Si es fecha, añadirla como primera columna en el CSV final
-        if is_datetime:
-            # Usar el mismo índice que X_lagged / y (para evitar desajuste de longitudes)
-            date_aligned = df.loc[X_lagged.index, first_col]
-            df_filtered.insert(0, first_col, date_aligned.values)
 
-            if verbose:
-                print(f"Columna de fecha detectada y preservada: '{first_col}'")
-        
-        # Guardar en CSV
+        # Reinsertar columna temporal si estaba presente
+        if fechas is not None:
+            df_filtered.insert(0, time_col, fechas)
+
         df_filtered.to_csv(filtered_csv_path, index=False)
     
-    # Devolver resultados
-    results = {
+    return {
         'selected_features': selected_features,
         'n_selected': len(selected_features),
         'feature_importances': selector.get_feature_importances(),
@@ -300,6 +259,6 @@ def select_features(input_file, output_dir, target_col, method='random_forest',
         'plot_path': plot_path,
         'filtered_csv_path': filtered_csv_path
     }
-    
-    return results
+
+
 

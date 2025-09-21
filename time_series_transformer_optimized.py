@@ -14,6 +14,7 @@ Parameters:
     fv: Forecast Variable - index of the column to be predicted
     fh: Forecast Horizon - number of future values to predict
     ph: Past History - number of past values to use for prediction
+    time_col: Name of the column with timestamps/dates (will be used as index)
 """
 
 import argparse
@@ -21,96 +22,80 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 
-def transform_time_series(input_file, output_file, fv, fh, ph, original_fv):
+
+def transform_time_series(input_file, output_file, fv, fh, ph, original_fv, time_col=None):
     """
-    Transform time series data for regression tasks.
-    
-    Args:
-        input_file (str): Path to input CSV file
-        output_file (str): Path to output CSV file
-        fv (int): Index of the forecast variable column
-        fh (int): Forecast horizon (number of future values to predict)
-        ph (int): Past history (number of past values to use)
-        original (int): Original fv in case there was feature selection.
+    Transform time series data for regression tasks with proper date alignment.
+    The time column is treated separately and reinserted at the end.
+    The FV (forecast variable) is kept in the past values, present (t0) and future horizon.
     """
-    # Read the input CSV file
+    # Leer CSV
     print(f"Reading input file: {input_file}")
     df = pd.read_csv(input_file)
-    
-    # Get column names
+    # Guardar indice por si se modifica
+    fv_final = fv
+    # Separar columna temporal si existe
+    fechas = None
+    if time_col is not None:
+        if time_col not in df.columns:
+            raise ValueError(f"Time column '{time_col}' not found in CSV. "
+                             f"Available columns: {df.columns.tolist()}")
+        df[time_col] = pd.to_datetime(df[time_col], errors="coerce")
+        if df[time_col].isna().all():
+            raise ValueError(f"Could not parse '{time_col}' as datetime.")
+        fechas = df[time_col].copy()
+        df = df.drop(columns=[time_col])
+        fv_final -= 1 
+
+    # Columnas de trabajo
     columns = df.columns.tolist()
-    
-    # Validate FV parameter
+    fv_name = columns[fv_final]
     if fv < 0 or fv >= len(columns):
         raise ValueError(f"FV index {fv} is out of range. Valid range: 0-{len(columns)-1}")
-    
-    # Get the name of the forecast variable
-    fv_name = columns[fv]
     print(f"Forecast variable: {fv_name} (column index {fv})")
-    
-    # Create empty list to store transformed data
+
     transformed_data = []
-    
-    # For each possible starting point in the time series
+    fechas_out = []
+
     print("Transforming data...")
-    for i in tqdm(range(len(df) - (ph + fh) + 1)):
-        # Get the window of past history for all variables
+    for i in range(len(df) - (ph + fh) + 1):
+        # Pasado de todas las variables (incluye FV)
         past_window = df.iloc[i:i+ph].values
-        
-        # Get the window of future values for the forecast variable
-        future_window = df.iloc[i+ph:i+ph+fh, fv].values
-        
-        # Create a row for the transformed data
+        # Futuro solo de la variable objetivo usando nombre
+        future_window = df.iloc[i+ph:i+ph+fh][fv_name].values
+        # Valor actual de la FV (t0)
+        current_fv = df.iloc[i+ph-1][fv_name]
+
         row = []
-        
-        # Add past values for all variables (flattened)
         for j in range(ph):
-            row.extend(past_window[j])
-        
-        # Add future values for the forecast variable
-        row.extend(future_window)
-        
-        # Add the row to the transformed data
+            row.extend(past_window[j])  # Pasado de todas las variables
+        row.append(current_fv)          # Valor actual de la FV
+        row.extend(future_window)       # Horizontes futuros
+
         transformed_data.append(row)
-    
-    # Create column names for the transformed data
+
+        # Fecha asociada al instante t = última del pasado
+        if fechas is not None:
+            fechas_out.append(fechas.iloc[i+ph-1])
+
+    # Construir nombres de columnas
     transformed_columns = []
-    
-    # Add column names for past values of all variables
     for t in range(ph):
-        for col in columns:
+        for col in columns:  # Incluye FV
             transformed_columns.append(f"{col}_t-{ph-t}")
-    
-    # Add column names for future values of the forecast variable
+    transformed_columns.append(f"{fv_name}")  # FV actual
     for t in range(fh):
-        transformed_columns.append(f"{fv_name}_t+{t+1}")
-    
-    # Create a DataFrame with the transformed data
+        transformed_columns.append(f"{fv_name}_t+{t+1}")  # Horizontes futuros
+
+    # Crear DataFrame
     transformed_df = pd.DataFrame(transformed_data, columns=transformed_columns)
-    
-    # Save the transformed data to the output CSV file
-    feature_selection_flag = ""
-    if fv != original_fv:
-        feature_selection_flag = "_with_fs"
-    print(f"Saving transformed data to: {output_file.strip(".csv")}{feature_selection_flag}_fv{original_fv}_fh{fh}_ph{ph}.csv")
-    transformed_df.to_csv(f"{output_file.strip(".csv")}{feature_selection_flag}_fv{original_fv}_fh{fh}_ph{ph}.csv", index=False)
+
+    # Insertar columna temporal al principio
+    if fechas is not None:
+        transformed_df.insert(0, time_col, fechas_out)
+
+    # Guardar CSV
+    transformed_df.to_csv(output_file, index=False)
+
     print(f"Transformation complete. Created {len(transformed_df)} samples.")
-
-
-def main():
-    # Parse command line arguments
-    parser = argparse.ArgumentParser(description='Transform time series data for regression tasks.')
-    parser.add_argument('input_file', type=str, help='Path to input CSV file')
-    parser.add_argument('output_file', type=str, help='Path to output CSV file')
-    parser.add_argument('--fv', type=int, required=True, help='Forecast Variable - index of the column to be predicted')
-    parser.add_argument('--fh', type=int, required=True, help='Forecast Horizon - number of future values to predict')
-    parser.add_argument('--ph', type=int, required=True, help='Past History - number of past values to use for prediction')
-    
-    args = parser.parse_args()
-    
-    # Transform the time series data
-    transform_time_series(args.input_file, args.output_file, args.fv, args.fh, args.ph)
-
-
-if __name__ == '__main__':
-    main()
+    print(f"Saved to: {output_file}")

@@ -56,3 +56,18 @@
 
 - Cambio de workflow: Actualmente hacía primero seleccion de atributos y posteriormente transformación. La idea es hacer primero una transformación para obtener todas las variables sobre las que seleccionar y posteriormente hacer la selección.
 
+- Fin del dia: ultimo comando python time_series_framework.py estacion_amplio.csv ria2_results --fv 8 --fh 6 --ph 6 --feature_selection --fs_method lasso --fs_n_features 2
+1. Ahora mismo hay varios problemas: lectura de ficheros, uso de insert (ejecutar), buscar la forma de preservar la fv utilizada desde el principio y que no cambie a la mitad.
+2. Hay que revisar todos los lugares donde se escriben/leen ficheros para hacer el programa consistente con los nombres.
+3. Ver qué es lo de insert.
+4. Revisar el uso de original_fv (probablemente ya no sea necesario o cambiar para utilizarlo más adelante)
+
+## 21/09/2025 ##
+- Revisados framework.py, transformer.py e \_\_init__.py para ajustar los nombres de ficheros.
+- Revisada mejor forma de mantener la fecha sin hacerle transformación y alineada con los datos filtrados: en el comando se introduce el nombre de la columna de fecha para utilizarla en los distintos metodos.
+- Revisar la forma de tratar con la fecha en cada paso.
+
+- Conclusión del día: 
+1. El código funciona y parece que genera el csv correctamente.
+2. El problema ahora está en la selección de características: ha seleccionado dos caracteristicas pero solo una tiene importancia, todas las demás tienen importancia 0.
+3. Ver por qué está haciendo esa selección y si con otros métodos ocurre lo mismo.
