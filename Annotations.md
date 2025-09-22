@@ -71,3 +71,28 @@
 1. El código funciona y parece que genera el csv correctamente.
 2. El problema ahora está en la selección de características: ha seleccionado dos caracteristicas pero solo una tiene importancia, todas las demás tienen importancia 0.
 3. Ver por qué está haciendo esa selección y si con otros métodos ocurre lo mismo.
+
+## 22/09/2025 ##
+- Al probar otros métodos y preguntar a gpt me ha aclarado que Lasso penaliza las no seleccionadas para llevarlas a 0, se queda únicamente con las características significativas (resto a 0) y solo con el lag más significativo (resto a 0).
+- Random forest cuenta la variable objetivo como una de las características.
+- Spectral devuelve orden distinto al esperado.
+- Probados Lasso, Random_forest, Spectral.
+- Probar 'pearson', 'ccf', 'mutual_info', 'elastic_net', 'rfe', 'granger', 'pca', 'sequential', 'genetic'.
+- Pearson, CCF, Mutual_info, Elastic_net, RFE devuelven humedad max y su primer lag (arreglar la variable objetivo).
+- Granger no funciona dado que utiliza max_lag (y tiene que ser estrictamente positivo).
+- PCA devuelve tambien orden distinto al esperado (parece que PCA y Spectral proceden de forma similar y penalizan demasiada correlación con la variable objetivo).
+- Sequential no funciona -> todas las variables importancia 0 y ningun error aparente.
+- Genetic devuelve tantas características como encuentre, y utiliza todas las columnas incluidas variable objetivo y valores futuros. El problema es que trabaja muy lento, no se si se podrán ajustar los parámetros de población y generaciones (ha usado 50 y 20).
+
+- Resuelto el problema al preparar X e y para predicción. 
+- En principio se han eliminado las filas 'fecha', 'fv' y 'fv_t+i' para incluirse como características posibles. Seguramente los instantes futuros se utilicen para entrenar modelos como fv alternativos o multioutput models.
+
+- Solucionar los problemas con Sequential y Granger.
+- Granger solucionado únicamente forzando max_lag a 1 para no dar problemas (sigue dando warning de verbose)
+- Sequential. Es probable que no funcione correctamente debido a que no hay secuencialidad ni periodicidad en los datos (periodo muy corto).
+
+- PCA y Spectral miden otras características de la serie, no su potencial para predecir la variable objetivo.
+
+- Conclusión del día: Probados todos los métodos incluidos en los parámetros de la función. Probar el resto de parámetros y otros csv (uno relativamente grande para aplicar Sequential correctamente).
+
+- Varios de los métodos no se han ejecutado tras separar las variables objetivo y valores futuros de las características sobre las que seleccionar.

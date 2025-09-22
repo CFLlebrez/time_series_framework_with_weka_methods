@@ -37,7 +37,7 @@ class GrangerCausalitySelector(BaseFeatureSelector):
             verbose (bool, optional): Si es True, muestra información detallada.
         """
         super().__init__(n_features, threshold, verbose)
-        self.max_lag = max_lag
+        self.max_lag = 1
         self.test = test
         self.p_values_ = None
         self.best_lags_ = None

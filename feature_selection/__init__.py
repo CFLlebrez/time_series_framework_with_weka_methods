@@ -78,32 +78,35 @@ def create_feature_selector(method, n_features=None, threshold=None, **kwargs):
         raise ValueError(f"Método desconocido: {method}")
 
 
-def prepare_data_for_selection(df, target_col, time_col=None, include_target=True):
+def prepare_data_for_selection(df, target_col, include_target=False):
     """
-    Prepara los datos para la selección de características, sin generar lags.
-    Los lags ya deben estar creados en la fase de transformación.
-    
+    Prepara los datos para la selección de características, 
+    eliminando la variable objetivo y sus horizontes futuros de X.
+
     Args:
         df (DataFrame): DataFrame ya transformado (con lags y horizontes).
         target_col (str): Nombre de la columna objetivo.
-        include_target (bool): Si es True, incluye la variable objetivo en los predictores.
-        
+        time_col (str, optional): Columna de tiempo.
+
     Returns:
         tuple: (X, y) donde X son las variables predictoras y y es la variable objetivo.
     """
     data = df.copy()
-    
-    # Construir X
-    cols_to_use = data.columns.tolist()
-    if time_col:
-        cols_to_use = [c for c in cols_to_use if c != time_col]
-    if not include_target:
-        cols_to_use = [c for c in cols_to_use if c != target_col]
 
-    X = data[cols_to_use].copy()
+    # Identificar columnas a excluir
+    cols_to_exclude = []
+    if not include_target:
+        cols_to_exclude.append(target_col)
+
+    # Excluir también horizontes futuros (target_col_t+N)
+    future_cols = [c for c in data.columns if c.startswith(f"{target_col}_t+")]
+    cols_to_exclude.extend(future_cols)
+    # Construir X e y
+    X = data.drop(columns=cols_to_exclude)
     y = data[target_col].copy()
 
     return X, y
+
 
 
 
@@ -183,7 +186,7 @@ def filter_data_with_selected_features(X, selected_features, output_file=None):
 
 
 def select_features(input_file, output_dir, target_col, method='random_forest', 
-                   n_features=None, threshold=None, time_col=None, include_target=True,
+                   n_features=None, threshold=None, time_col=None, include_target=False,
                    generate_report=True, generate_filtered_csv=True, **kwargs):
     """
     Función principal para selección de características en series temporales.
@@ -208,7 +211,8 @@ def select_features(input_file, output_dir, target_col, method='random_forest',
     # Preparar datos (sin generar lags, ya vienen creados)
     if verbose:
         print("Preparando datos para selección (sin recalcular lags)...")
-    X, y = prepare_data_for_selection(df, target_col, time_col=None, include_target=include_target)
+
+    X, y = prepare_data_for_selection(df, target_col, include_target=include_target)
     
     # Crear selector
     if verbose:
