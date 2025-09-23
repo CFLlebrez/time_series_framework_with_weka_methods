@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import TimeSeriesSplit, cross_val_score
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
@@ -207,8 +207,8 @@ class SequentialFeatureSelector(BaseFeatureSelector):
             cv=self.cv, scoring=self.scoring
         )
         
-        # Devolver puntuación media
-        return np.mean(scores)
+        # Devolver puntuación  (neg para pasar de neg MSE a MSE)
+        return -np.mean(scores)
     
     def get_selection_history(self):
         """
@@ -297,7 +297,7 @@ class GeneticFeatureSelector(BaseFeatureSelector):
         self.mutation_prob = mutation_prob
         self.tournament_size = tournament_size
         self.scoring = scoring
-        self.cv = cv
+        self.cv = TimeSeriesSplit(n_splits= cv if (cv.is_integer()) else 5)
         self.estimator = estimator or RandomForestRegressor(n_estimators=50, random_state=random_state)
         self.random_state = random_state
         self.best_individual_ = None

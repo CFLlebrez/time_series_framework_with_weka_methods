@@ -96,3 +96,18 @@
 - Conclusión del día: Probados todos los métodos incluidos en los parámetros de la función. Probar el resto de parámetros y otros csv (uno relativamente grande para aplicar Sequential correctamente).
 
 - Varios de los métodos no se han ejecutado tras separar las variables objetivo y valores futuros de las características sobre las que seleccionar.
+
+## 23/09/2025 ##
+- Cambiado sequential que devolvía 0: en _evaluate_feature devolvía negativo para trabajar con neg_MSE y ahora positivo para trabajar con MSE (ahora devuelve valores demasiado grandes, lo corregiré).
+
+- Ahora que el framework funciona mi siguiente objetivo es leer cada método detenidamente y entender los distintos aspectos que influyen (opinión pre-reunión).
+
+- Resumen de qué decir en la reunión:
+1. Empecé a trabajar con el framework, reestructuré algunas carpetas y corregí parte del código para que fuese consistente.
+2. He estado cambiando distintas cosas para cambiar el flujo de trabajo: antes hacía selección de atributos y posteriormente transformaba el csv. Ahora primero lo transforma y realiza la selección directamente sobre el csv transformado (en el csv final no incluye los instantes futuros de la variable objetivo, solo las caracteristicas seleccionadas y la variable objetivo).
+3. Una vez conseguí que funcionara correctamente para el csv que conseguí como muestra probé con otros y siempre que respete ciertos formatos (una columna de fecha) funciona correctamente.
+4. Aún tengo que probar con csv's con muchos valores vacíos, porque en principio simplemente elimina las filas correspondientes pero se podría mejorar.
+**(^)Hasta ahora/De ahora en adelante(v)**
+5. Ahora lo que me dedicaré es a analizar más detenidamente los métodos para asegurarme de que no solo dan resultados con sentido sino que su implementación también es correcta (y tratar de entender la teoría que hay). También hay varias secciones de código que están desfasadas y dan warnings a pesar de que funcione.
+6. En principio una vez haya hecho eso probaré con los métodos de weka porque son independientes del resto de métodos.
+7. También trataré de añadir una documentación (actualizar la que generó manus).
