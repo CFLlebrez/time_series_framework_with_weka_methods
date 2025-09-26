@@ -278,7 +278,7 @@ class CrossCorrelationSelector(BaseFeatureSelector):
                     # Alinear series con el lag
                     x_lagged = X[col].shift(lag)
                     # Eliminar NaNs
-                    valid_idx = ~x_lagged.isna()
+                    valid_idx = ~x_lagged.isna() #~ works as ! for pandas
                     if valid_idx.sum() > 10:  # Asegurar suficientes datos
                         corr = stats.pearsonr(x_lagged[valid_idx], y[valid_idx])[0]
                         corr_abs = abs(corr)
@@ -337,7 +337,7 @@ class CrossCorrelationSelector(BaseFeatureSelector):
         # Calcular matriz de correlación cruzada
         ccf_matrix = np.zeros((len(top_features), self.max_lag + 1))
         
-        for i, feature in enumerate(top_features):
+        for i, feature in enumerate(top_features): # (i,lag) works as (i,j)
             for lag in range(self.max_lag + 1):
                 x_lagged = X[feature].shift(lag)
                 valid_idx = ~x_lagged.isna()

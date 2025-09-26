@@ -111,3 +111,17 @@
 5. Ahora lo que me dedicaré es a analizar más detenidamente los métodos para asegurarme de que no solo dan resultados con sentido sino que su implementación también es correcta (y tratar de entender la teoría que hay). También hay varias secciones de código que están desfasadas y dan warnings a pesar de que funcione.
 6. En principio una vez haya hecho eso probaré con los métodos de weka porque son independientes del resto de métodos.
 7. También trataré de añadir una documentación (actualizar la que generó manus).
+
+## 24/09/2025 ##
+- Reflexión: desde un principio valía con haber mantenido el flujo normal únicamente cambiando.
+1. Estructura de carpetas para ficheros de entrada salida.
+2. Separar variable objetivo (a menos que se quiera incluir) y fecha para realizar selección de atributos (con max_lag=ph).
+3. Realizar la transformación añadiendo los lags y steps de la variable objetivo.
+4. En caso de no haber selección de atributos se realiza la transformación sobre los datos originales sin la fecha.
+
+- Próximo: Analizar los distintos métodos de selección de atributos y comprobar que haber cambiado el flujo inicial de trabajo no afecta a su correcto funcionamiento.
+- Ahora mismo el csv filtrado solo necesita los instantes futuros que se predirán (y eliminar la variable objetivo en el instante concreto).
+
+## 25/09/2025 ##
+- Analizados \_\_init__.py y correlation_based.py
+- Siguientes automatic_selection.py y model_based.py

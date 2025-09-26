@@ -286,11 +286,11 @@ El módulo de selección de atributos se integrará con el framework existente d
 
 1. El usuario proporciona un archivo CSV con series temporales multivariables.
 2. Opcionalmente, el usuario especifica un método de selección de atributos y sus parámetros.
-3. Si se solicita selección de atributos, el sistema:
-   a. Prepara los datos para la selección de atributos (creando lags si es necesario).
+3. El sistema transforma los datos añadiendo lags y steps de la variable objetivo.
+4. Si se solicita selección de atributos, el sistema:
+   a. Prepara los datos para la selección de atributos.
    b. Aplica el método de selección especificado.
    c. Genera visualizaciones de importancia de atributos si se solicita.
-4. El sistema transforma los datos usando solo las variables y lags seleccionados.
 5. El resultado se guarda en un archivo CSV listo para regresión.
 
 ## Consideraciones de Rendimiento
