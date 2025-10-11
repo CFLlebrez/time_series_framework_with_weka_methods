@@ -44,13 +44,35 @@ absolute, max_lag (and best_lags) <br><br>
 -\_\_init__()<br>
 -fit(): y to Series, correlations(importances) to Series<br>
 **-As max_lag was forced to 0, CCF is equivalent to Pearson.**<br>
-- get_best_lags(): normal get
-- plot_ccf_heatmap() (not used)
+-get_best_lags(): normal get<br>
+-plot_ccf_heatmap() (not used)<br>
 
 - ### class MutualInformationSelector:
 n_neighbors <br><br>
 -\_\_init__()<br>
 -fit(): numeric cols, y, n_neighbors -> mi_value to Series<br>
 
-**create_correlation_selector**
+**create_correlation_selector**<br>
+
 ## automatic_selection.py
+- ### class SequentialFeatureSelector:
+direction, scoring, cv, estimator <br><br>
+-\_\_init__()<br>
+-fit(): forward(none and adds)/backward(all and removes) candidate sets -> best score (using evaluate) <br>
+-\_evaluate_feature_set(): cross_val_score(cv, scoring)<br>
+-get and plot _selection_history() (plot for external use, not used in this file).<br>
+
+- ### class GeneticFeatureSelector:
+population_size, generations, crossover_prob, mutation_prob, tournament_size, scoring, cv, estimator, random_state(seed)<br><br>
+-\_\_init__()<br>
+-fit(): aplicar genéticos.<br>
+-_initialize_population.<br>
+-_evaluate_individual.<br>
+-_selection.<br>
+-_crossover.<br>
+-_mutation.<br>
+-plot_evolution.<br>
+
+**create_automatic_selector**<br>
+
+## model_based.py

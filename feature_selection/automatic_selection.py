@@ -208,7 +208,7 @@ class SequentialFeatureSelector(BaseFeatureSelector):
         )
         
         # Devolver puntuación  (neg para pasar de neg MSE a MSE)
-        return -np.mean(scores)
+        return np.mean(scores)
     
     def get_selection_history(self):
         """

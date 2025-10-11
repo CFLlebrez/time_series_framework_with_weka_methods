@@ -125,3 +125,30 @@
 ## 25/09/2025 ##
 - Analizados \_\_init__.py y correlation_based.py
 - Siguientes automatic_selection.py y model_based.py
+
+## 01/10/2025 ##
+- REUNION: He estado trabajando con el framework y he hecho los siguientes cambios/avances
+1. Cambié un poco la estructura de carpetas.
+2. Cambié el flujo de trabajo: antes filtraba y después transformaba lo filtrado, ahora primero transforma y después filtra sobre el csv transformado.
+3. También lo arreglé para que no incluyese la columna de fecha ni la variable objetivo ni pasos futuros como variables predictoras (a menos que se especifique) y para que conservase la columna de fecha tras el filtrado.
+4. Eso lo hice en un primer contacto con el framework hasta que funcionó correctamente y ahora estoy revisando uno a uno los ficheros de modelos para hacer tests en detalle (parámetros específicos de algunos métodos).
+5. Por ahora lo he probado con los parámetros generales y funciona, genera un csv con las n caracteristicas seleccionadas, la variable objetivo y la fecha.
+6. Aún no he probado los métodos de weka ni sklearn que vienen por separado, lo haré después de revisar sus códigos.
+
+- Info:
+1. Zotero.
+
+- Feedback:
+1. Algoritmo de predicción sencillo XGBoost o KNN (media de los n vecinos más cercanos).
+2. Probar dataset completo y probar con mismo entorno de training y test.
+3. Introducir predicción paramétrica (empezar con KNN y añadir otros únicamente cambiando parámetros).
+4. Ver correlaciones entre métodos de selección y métodos de predicción.
+5. Terminar primero con la selección de atributos y probar posteriormente con predicción.
+
+
+CONCLUSIÓN: el objetivo del framework es dar una forma de comparar métodos de selección y predicción. Obviamente dependerá del tipo de dataset, propios parámetros de cada método, etc. Pero se puede probar en igualdad de condiciones.
+
+## 11/10/2025 ##
+- Análisis de automatic_selection.py: cambiado signo _evaluate_feature_set (está preparado para que menor valor absoluto, menor error) neg MSE mientras más alto (menor valor absoluto) devuelva, mejor.
+
+- Terminado automatic_selection.py, queda model_based.py. Después probar time_series_specific.py, weka_inspired.py y sklearn_filter.py.
