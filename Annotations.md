@@ -152,3 +152,17 @@ CONCLUSIÓN: el objetivo del framework es dar una forma de comparar métodos de 
 - Análisis de automatic_selection.py: cambiado signo _evaluate_feature_set (está preparado para que menor valor absoluto, menor error) neg MSE mientras más alto (menor valor absoluto) devuelva, mejor.
 
 - Terminado automatic_selection.py, queda model_based.py. Después probar time_series_specific.py, weka_inspired.py y sklearn_filter.py.
+
+## 17/10/2025 ##
+- Análisis de model_based hecho: Lasso penalización usando abs(coef regresion) L1 y Ridge (en Elastic Net) usando cuadrados. Lasso mejora disminuyendo la varianza (error por supersensibilidad) y Ridge bajando el bias (error por simplicidad).
+
+- He empezado a hacer un notebook para probar con KNN sobre los csv generados por los distintos métodos de selección de atributos. He hecho el de PCA y el dataset A_data (del de los valores de stocks).
+
+- Siguiente: Continuar con más métodos de selección.
+
+## 18/10/2025 ##
+- Hecha la comparación para todos los ficheros generados. 
+- Pensar en: crear una celda para ejecutar el framework con todos los métodos (sólo he dejado fuera genéticos, dejar fuera también rfe). De esa forma poder cambiar los parámetros una vez y no tener que ejecutar el comando para cada método.
+- Pensar también en probar otros métodos de predicción como XGBoost.
+
+

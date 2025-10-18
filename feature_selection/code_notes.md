@@ -76,3 +76,28 @@ population_size, generations, crossover_prob, mutation_prob, tournament_size, sc
 **create_automatic_selector**<br>
 
 ## model_based.py
+- ### class RandomForestSelector:
+n_estimators, max_depth, random_state <br><br>
+-\_\_init__()<br>
+-fit(): RandomForestRegressor -> feature_importances as Series, select_features().<br>
+-plot_feature_importances(): plot.<br>
+
+- ### class LassoSelector:
+alpha (regularization), max_iter, random_state <br><br>
+-\_\_init__()<br>
+-fit(): scales data, Lasso -> feature_importances (abs(coefs)) as Series, select_features().<br>
+-get_coefficients(): extracts coefficients from the model.<br>
+
+- ### class ElasticNetSelector:
+alpha (regularization), l1_ratio (L1% in L1 and L2 mix. Lasso is 1 and Ridge is 0), max_iter, random_state <br><br>
+-\_\_init__()<br>
+-fit(): scales data, ElasticNet -> feature importances (abs(coefs)) as Series, select_features()<br>
+-get_coefficients(): extracts coefficients from the model.<br>
+
+- ### class RFESelector:
+step, estimator (or RandomForest) <br><br>
+-\_\_init__()<br>
+-fit(): scales data, RFE -> feature importances (inverts for greater~more important) as Series, select_features()<br>
+-get_coefficients(): extracts coefficients from the model.<br>
+
+**create_model_selector**<br>
