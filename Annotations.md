@@ -165,4 +165,16 @@ CONCLUSIÓN: el objetivo del framework es dar una forma de comparar métodos de 
 - Pensar en: crear una celda para ejecutar el framework con todos los métodos (sólo he dejado fuera genéticos, dejar fuera también rfe). De esa forma poder cambiar los parámetros una vez y no tener que ejecutar el comando para cada método.
 - Pensar también en probar otros métodos de predicción como XGBoost.
 
+## 22/10/2025 ##
+- REUNION: 
+    * He analizado los códigos de los métodos de selección para entenderlos, aún sin weka ni sklearn.
+    * He estado creando un notebook para comparar métodos sobre ficheros generados por el framework: Para un mismo csv original, he generado todos los csv's filtrados utilizando los distintos métodos de selección de atributos (aun sin weka y sklearn que tienen métodos aparte).
+    * Mi idea es expandir el notebook para otros ficheros y/o cambiar parámetros aunque no estoy seguro de cómo hacerlo. Ahora mismo tengo que generar todos los tests en la carpeta de resultados y persiste el último test realizado.
+
+    * Feedback:
+        * Continuar con KNN. 
+        * Hacerlo lo más amplio posible: tratar de utilizar también los métodos de weka y sklearn.
+        * Revisar ventanado y escalado.
+- Reflexión:
+    * El objetivo final del framework es: dado un fichero csv de una serie temporal en principio con fv (variable objetivo) fija; comparar los distintos métodos de selección de atributos probando distintos parámetros fh (horizonte), ph (historial), n_features (número de variables seleccionadas), y su desempeño en la predicción con KNN.
 
