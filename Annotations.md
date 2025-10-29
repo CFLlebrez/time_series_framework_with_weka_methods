@@ -178,3 +178,13 @@ CONCLUSIÓN: el objetivo del framework es dar una forma de comparar métodos de 
 - Reflexión:
     * El objetivo final del framework es: dado un fichero csv de una serie temporal en principio con fv (variable objetivo) fija; comparar los distintos métodos de selección de atributos probando distintos parámetros fh (horizonte), ph (historial), n_features (número de variables seleccionadas), y su desempeño en la predicción con KNN.
 
+## 29/10/2025 ##
+- Revisando los últimos resultados Granger no es correcto para el flow actual. Granger trabaja con las variables sin lags, toma un par de características y comprueba en qué medida x causa a y: considera un modelo lineal hasta max_lag y comprueba si incluir x mejora la predicción usando solo y. Este método solo es útil para seleccionar características, no sus lags. **Probablemente descartado**
+
+- Lasso selecciona una característica extraña y he acabado añadiendo para que tanto Lasso como Elastic Net admitan el parámetro alpha.
+
+- Random Forest selecciona una con importancia significativa y el resto son despreciables. **REVISAR**
+
+- Sequential todo 0, pero creo recordar que no era erróneo. **REVISAR**
+
+- Después de revisar esos, empezar a ver weka_inspired (probablemente no estén implementados para seguir el mismo flujo actual).
