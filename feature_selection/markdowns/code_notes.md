@@ -101,3 +101,12 @@ step, estimator (or RandomForest) <br><br>
     - get_coefficients(): extracts coefficients from the model.<br>
 
 **create_model_selector**<br>
+
+## sklearn_filter.py
+- ### class SKLearnFilterSelector:
+method, n_features (kbest), percentile (percentile), score_func, strategy (univariate), param (univariate), threshold (variance threshold). <br><br>
+    - \_\_init__()<br>
+    - fit(): creates specific selector, gets features and scores.
+    - transform()
+
+**create_sklearn_filter_selector**<br>

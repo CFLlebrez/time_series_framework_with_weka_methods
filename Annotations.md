@@ -188,3 +188,10 @@ CONCLUSIÓN: el objetivo del framework es dar una forma de comparar métodos de 
 - Sequential todo 0, pero creo recordar que no era erróneo. **REVISAR**
 
 - Después de revisar esos, empezar a ver weka_inspired (probablemente no estén implementados para seguir el mismo flujo actual).
+
+## 4/11/2025 ##
+- Random forest revisado, el resultado "extraño" es por las carácteristicas del dataset.
+
+- Sequential revisado, las importancias realmente no son 0 pero son casi nulas.
+
+- Analizado sklearn_filter methods y modificado el framework para soportar parámetros relacionados.

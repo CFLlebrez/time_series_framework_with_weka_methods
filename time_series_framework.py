@@ -39,14 +39,20 @@ def main():
     parser.add_argument('--fs_method', type=str, default='random_forest',
                         choices=['pearson', 'ccf', 'mutual_info', 'random_forest', 
                                  'lasso', 'elastic_net', 'rfe', 'granger', 'pca', 
-                                 'spectral', 'sequential', 'genetic'],
+                                 'spectral', 'sequential', 'genetic', 'sklearn_filter'],
                         help='Método de selección de atributos')
+    parser.add_argument('--sklearn_method', type=str, default='selectkbest', 
+                        choices=['selectkbest', 'selectpercentile', 
+                                 'genericunivariateselect', 'variancethreshold'],
+                        help='Método de selección de filtro de sklearn')
     parser.add_argument('--fs_n_features', type=int, default=None,
                         help='Número de atributos a seleccionar')
     parser.add_argument('--fs_threshold', type=float, default=None,
                         help='Umbral para la selección de atributos')
     parser.add_argument('--alpha', type=float, default=None,
                         help='Parámetro para métodos Lasso y ElasticNet')
+    parser.add_argument('--percentile', type=float, default=None,
+                        help='Parámetro para SKlearn select percentile')
     
     args = parser.parse_args()
 
@@ -114,6 +120,19 @@ def main():
                 max_lag=0,           # No se prueban lags, se hace selección sobre el csv transformado
                 time_col=args.time_col,  # ✅ ahora se informa la columna temporal
                 alpha=args.alpha if args.alpha else 1.0
+            )
+        elif args.fs_method=='sklearn_filter':
+            fs_results = select_features(
+                transformed_csv,
+                os.path.join(output_folder_dir, f'feature_selection_{args.fs_method}_{args.sklearn_method}'),
+                target_col,
+                method=args.fs_method,
+                sklearn_method=args.sklearn_method,
+                n_features=args.fs_n_features,
+                sklearn_threshold=args.fs_threshold,
+                percentile=args.percentile,
+                max_lag=0,           # No se prueban lags, se hace selección sobre el csv transformado
+                time_col=args.time_col,  # ✅ ahora se informa la columna temporal
             )
         else:
             fs_results = select_features(

@@ -54,13 +54,13 @@ def create_feature_selector(method, n_features=None, threshold=None, **kwargs):
     # Métodos de filtro de scikit-learn
     elif method == 'sklearn_filter':
         return create_sklearn_filter_selector(
-            method=kwargs.get('method', 'selectkbest'),
+            method=kwargs.get('sklearn_method', 'selectkbest'),
             n_features=n_features,
             percentile=kwargs.get('percentile'),
             score_func_name=kwargs.get('score_func_name', 'f_regression'),
             strategy=kwargs.get('strategy', 'k_best'),
             param=kwargs.get('param'),
-            threshold=kwargs.get('threshold', 0.0),
+            threshold=kwargs.get('sklearn_threshold', 0.0),
             verbose=kwargs.get('verbose', False)
         )
     

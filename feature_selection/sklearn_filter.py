@@ -95,6 +95,7 @@ class SKLearnFilterSelector(BaseFeatureSelector):
             )
             
         elif self.method == 'variancethreshold':
+            print(self.threshold)
             self.selector = VarianceThreshold(threshold=self.threshold)
             
         else:
