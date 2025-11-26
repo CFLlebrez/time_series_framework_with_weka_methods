@@ -80,7 +80,6 @@ def main():
     # Cargar datos originales (solo para identificar variable objetivo)
     print(f"Cargando datos desde {input_folder_dir}...")
     df = pd.read_csv(input_folder_dir)
-
     # Verificar que la columna temporal existe
     if args.time_col not in df.columns:
         raise ValueError(f"La columna temporal '{args.time_col}' no existe en el CSV. "
@@ -94,7 +93,7 @@ def main():
     columns = df.columns.tolist()
     
     if args.fv < 0 or args.fv >= len(columns):
-        raise ValueError(f"FV index {args.fv} está fuera de rango. Rango válido: 0-{len(columns)-1}")
+        raise ValueError(f"FV index {args.fv} está fuera de rango. Rango válido: 0-{len(columns)-1}, columnas {columns}")
     
     target_col = columns[args.fv]
     print(f"Variable objetivo: {target_col} (índice {args.fv})")

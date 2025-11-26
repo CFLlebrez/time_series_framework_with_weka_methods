@@ -211,3 +211,8 @@ CONCLUSIÓN: el objetivo del framework es dar una forma de comparar métodos de 
 - InfoGain: añadido discretize y n_bins. Discretize es un flag, si se añade, True, si no, False.
 - ReliefF: añadidos los parámetros, analizar su uso.
 
+- Probando CFS con otros datasets siempre selecciona únicamente el lag t-1 de la variable objetivo. Probar con datasets con más características dado que estos al incluir la variable objetivo tienden a seleccionar sus propios lags.
+
+- NEXT:
+    - Probar con otros datasets.
+    - Hacer el script para predicciones sobre los datasets filtrados.

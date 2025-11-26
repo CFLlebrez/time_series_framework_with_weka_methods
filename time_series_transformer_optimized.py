@@ -45,14 +45,14 @@ def transform_time_series(input_file, output_file, fv, fh, ph, original_fv, time
             raise ValueError(f"Could not parse '{time_col}' as datetime.")
         fechas = df[time_col].copy()
         df = df.drop(columns=[time_col])
-        fv_final -= 1 
+        fv_final-=1
 
     # Columnas de trabajo
     columns = df.columns.tolist()
     fv_name = columns[fv_final]
-    if fv < 0 or fv >= len(columns):
-        raise ValueError(f"FV index {fv} is out of range. Valid range: 0-{len(columns)-1}")
-    print(f"Forecast variable: {fv_name} (column index {fv})")
+    if fv_final < 0 or fv_final >= len(columns):
+        raise ValueError(f"FV index {fv} is out of range. Valid range: 0-{len(columns)-(fv_final==fv)}") #si fv_final está fuera de rango y es igual a fv, no se ha eliminado time_col y el rango es hasta len-1
+    print(f"Forecast variable: {fv} (column index {fv})")
 
     transformed_data = []
     fechas_out = []
