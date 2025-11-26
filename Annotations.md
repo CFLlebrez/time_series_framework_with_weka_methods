@@ -195,3 +195,19 @@ CONCLUSIÓN: el objetivo del framework es dar una forma de comparar métodos de 
 - Sequential revisado, las importancias realmente no son 0 pero son casi nulas.
 
 - Analizado sklearn_filter methods y modificado el framework para soportar parámetros relacionados.
+
+## 12/11/2025 ##
+- Métodos de weka son originales de Java, comprobar implementación y comparar con original. Mirar repositorios de github en caso de ser necesario.
+
+## 25/11/2025
+- Revisados los métodos de weka y añadidos al framework. Revisar algún resultado extraño (cfs solo selecciona 1, los resultados de relieff son un poco extraños) y añadir parámetros para esos métodos en el framework.
+
+## 26/11/2025
+- CFS: Es normal que tenga ese comportamiento por las características del dataset (las variables que más explican volume son sus propios lags pero a su vez presentan mucha redundancia, eso lleva a que sólo seleccione el lag más reciente). El número de características a seleccionar solo acota superiormente.
+- InfoGain: En principio funcionaba con threshold, he cambiado el orden de los if para que priorice el numero de características a seleccionar.
+- ReliefF: Lo único anómalo es que las características seleccionadas son lags anteriores cuando normalmente se selecciona el lag t-1.
+- Añadir parámetros para los métodos.
+- CFS: añadido número de retrocesos.
+- InfoGain: añadido discretize y n_bins. Discretize es un flag, si se añade, True, si no, False.
+- ReliefF: añadidos los parámetros, analizar su uso.
+

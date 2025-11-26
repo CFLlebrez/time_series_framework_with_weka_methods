@@ -39,16 +39,33 @@ def main():
     parser.add_argument('--fs_method', type=str, default='random_forest',
                         choices=['pearson', 'ccf', 'mutual_info', 'random_forest', 
                                  'lasso', 'elastic_net', 'rfe', 'granger', 'pca', 
-                                 'spectral', 'sequential', 'genetic', 'sklearn_filter'],
+                                 'spectral', 'sequential', 'genetic', 'sklearn_filter', 'weka_inspired'],
                         help='Método de selección de atributos')
     parser.add_argument('--sklearn_method', type=str, default='selectkbest', 
                         choices=['selectkbest', 'selectpercentile', 
                                  'genericunivariateselect', 'variancethreshold'],
                         help='Método de selección de filtro de sklearn')
+    parser.add_argument('--weka_inspired_method', type=str, default='cfs', 
+                        choices=['cfs', 'relieff', 'infogain'],
+                        help='Método de selección de filtro inspirado en weka')
     parser.add_argument('--fs_n_features', type=int, default=None,
                         help='Número de atributos a seleccionar')
     parser.add_argument('--fs_threshold', type=float, default=None,
                         help='Umbral para la selección de atributos')
+    parser.add_argument('--infogain_discretize', action='store_true', 
+                        help='Discretizar la variable objetivo InfoGain, depende de cuantiles n_bins')
+    parser.add_argument('--infogain_nbins', type=int, default=10,
+                        help='Parámetro para InfoGain de Weka')
+    parser.add_argument('--fs_max_backtrack', type=int, default=5,
+                        help='Parámetro para CFS de Weka')
+    parser.add_argument('--relieff_sample_size', type=int, default=None,
+                        help='Parámetro para CFS de Weka')
+    parser.add_argument('--relieff_n_neighbors', type=int, default=10,
+                        help='Parámetro para ReliefF de Weka')
+    parser.add_argument('--relieff_discrete_threshold', type=int, default=10,
+                        help='Parámetro para ReliefF de Weka')
+    parser.add_argument('--relieff_n_jobs', type=int, default=1,
+                        help='Parámetro para ReliefF de Weka')
     parser.add_argument('--alpha', type=float, default=None,
                         help='Parámetro para métodos Lasso y ElasticNet')
     parser.add_argument('--percentile', type=float, default=None,
@@ -131,6 +148,25 @@ def main():
                 n_features=args.fs_n_features,
                 sklearn_threshold=args.fs_threshold,
                 percentile=args.percentile,
+                max_lag=0,           # No se prueban lags, se hace selección sobre el csv transformado
+                time_col=args.time_col,  # ✅ ahora se informa la columna temporal
+            )
+        elif args.fs_method=='weka_inspired':
+            fs_results = select_features(
+                transformed_csv,
+                os.path.join(output_folder_dir, f'feature_selection_{args.fs_method}_{args.weka_inspired_method}'),
+                target_col,
+                method=args.fs_method,
+                weka_inspired_method=args.weka_inspired_method,
+                n_features=args.fs_n_features,
+                weka_threshold=args.fs_threshold,
+                max_backtrack=args.fs_max_backtrack,
+                discretize=args.infogain_discretize,
+                n_bins=args.infogain_nbins,
+                n_neighbors=args.relieff_n_neighbors,
+                sample_size=args.relieff_sample_size,
+                discrete_threshold=args.relieff_discrete_threshold,
+                n_jobs=args.relieff_n_jobs,
                 max_lag=0,           # No se prueban lags, se hace selección sobre el csv transformado
                 time_col=args.time_col,  # ✅ ahora se informa la columna temporal
             )

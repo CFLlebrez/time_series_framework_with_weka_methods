@@ -67,11 +67,20 @@ def create_feature_selector(method, n_features=None, threshold=None, **kwargs):
     # Métodos inspirados en Weka
     elif method == 'weka_inspired':
         return create_weka_inspired_selector(
-            method=kwargs.get('method', 'cfs'),
+            method=kwargs.get('weka_inspired_method', 'cfs'),
             n_features=n_features,
-            threshold=threshold,
-            verbose=kwargs.get('verbose', False),
-            **kwargs
+            threshold=kwargs.get('weka_threshold', 0.0),
+            #CFS
+            max_backtrack=kwargs.get('max_backtrack', 5),
+            #InfoGain
+            n_bins=kwargs.get('n_bins', 10),
+            discretize=kwargs.get('discretize', True),
+            #ReliefF
+            n_neighbors=kwargs.get('n_neighbors', 10),
+            sample_size=kwargs.get('sample_size', None),
+            discrete_threshold=kwargs.get('discrete_threshold', 10),
+            n_jobs=kwargs.get('n_jobs', 1),
+            verbose=kwargs.get('verbose', False)
         )
     
     else:

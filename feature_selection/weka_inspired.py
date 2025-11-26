@@ -94,7 +94,7 @@ class CFSSelector(BaseFeatureSelector):
         X_numeric = X[numeric_cols]
         
         if self.verbose:
-            print("Iniciando selección de características con CFS...")
+            print("Iniciando selección de características con CFS,", self.max_backtrack,"retrocesos...")
         
         # Calcular correlaciones característica-clase
         self.class_correlations_ = {}
@@ -128,7 +128,6 @@ class CFSSelector(BaseFeatureSelector):
         
         # Iniciar búsqueda BestFirst
         selected_features = self._best_first_search(numeric_cols, X_numeric, y)
-        
         # Guardar características seleccionadas
         self.selected_features_ = selected_features
         
@@ -226,7 +225,6 @@ class CFSSelector(BaseFeatureSelector):
                     # Crear nuevo subconjunto añadiendo esta característica
                     new_subset = current_subset + [feature]
                     new_subset_tuple = tuple(sorted(new_subset))
-                    
                     # Verificar si ya ha sido visitado
                     if new_subset_tuple in visited:
                         continue
@@ -323,7 +321,7 @@ class InfoGainSelector(BaseFeatureSelector):
         X_numeric = X[numeric_cols]
         
         if self.verbose:
-            print("Iniciando selección de características con InfoGain...")
+            print("Iniciando selección de características con InfoGain, Discretize:", self.discretize, ", n_bins:", self.n_bins, "...")
         
         # Discretizar la variable objetivo si es continua
         if np.issubdtype(y.dtype, np.number) and len(np.unique(y)) > self.n_bins:
@@ -364,14 +362,14 @@ class InfoGainSelector(BaseFeatureSelector):
         self.feature_importances_ = pd.Series(info_gains)
         
         # Seleccionar características
-        if self.threshold is not None:
-            # Seleccionar características con ganancia de información por encima del umbral
-            self.selected_features_ = [feature for feature, gain in info_gains.items() 
-                                     if gain >= self.threshold]
-        elif self.n_features is not None:
+        if self.n_features is not None:
             # Seleccionar las n_features con mayor ganancia de información
             sorted_features = sorted(info_gains.items(), key=lambda x: x[1], reverse=True)
             self.selected_features_ = [feature for feature, _ in sorted_features[:self.n_features]]
+        elif self.threshold is not None:
+            # Seleccionar características con ganancia de información por encima del umbral
+            self.selected_features_ = [feature for feature, gain in info_gains.items() 
+                                     if gain >= self.threshold]
         else:
             # Por defecto, seleccionar características con ganancia positiva
             self.selected_features_ = [feature for feature, gain in info_gains.items() 
@@ -479,7 +477,7 @@ class ReliefFSelector(BaseFeatureSelector):
         X_numeric = X[numeric_cols]
         
         if self.verbose:
-            print("Iniciando selección de características con ReliefF...")
+            print("Iniciando selección de características con ReliefF, sample_size:", self.sample_size, ", discrete_threshold:", self.discrete_threshold, ", n_jobs:", self.n_jobs, ", n_neighbors:", self.n_neighbors, "....")
         
         # Determinar si la variable objetivo es discreta o continua
         if len(np.unique(y)) <= self.discrete_threshold or not np.issubdtype(y.dtype, np.number):
@@ -490,14 +488,14 @@ class ReliefFSelector(BaseFeatureSelector):
             self._fit_regression(X_numeric, y)
         
         # Seleccionar características
-        if self.threshold is not None:
-            # Seleccionar características con puntuación por encima del umbral
-            self.selected_features_ = [feature for feature, score in self.feature_importances_.items() 
-                                     if score >= self.threshold]
-        elif self.n_features is not None:
+        if self.n_features is not None:
             # Seleccionar las n_features con mayor puntuación
             sorted_features = sorted(self.feature_importances_.items(), key=lambda x: x[1], reverse=True)
             self.selected_features_ = [feature for feature, _ in sorted_features[:self.n_features]]
+        elif self.threshold is not None:
+            # Seleccionar características con puntuación por encima del umbral
+            self.selected_features_ = [feature for feature, score in self.feature_importances_.items() 
+                                     if score >= self.threshold]
         else:
             # Por defecto, seleccionar características con puntuación positiva
             self.selected_features_ = [feature for feature, score in self.feature_importances_.items() 
@@ -630,7 +628,6 @@ class ReliefFSelector(BaseFeatureSelector):
         X_values = X.values
         feature_names = X.columns.tolist()
         y_values = y.values
-        
         # Determinar tamaño de muestra
         n_samples = len(X)
         if self.sample_size is not None and self.sample_size < n_samples:

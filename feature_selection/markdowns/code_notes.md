@@ -110,3 +110,29 @@ method, n_features (kbest), percentile (percentile), score_func, strategy (univa
     - transform()
 
 **create_sklearn_filter_selector**<br>
+
+## weka_inspired.py
+- ### class PriorityQueue:
+priority queue for BestFit: isEmpty, insert, pop.
+- ### class CFSSelector:
+threshold, max_backtrack<br><br>
+    - \_\_init__()<br>
+    - fit(): determines correlation (categorical - point biserial; or continuous - pearson), correlation matrix and best_first_search.<br>
+    - _calculate_merit(): mean correlation class-feature, mc feature-feature and formula.<br>
+    - _best_first_search(): based on merits, subsets until 5 consecutive non-improving.
+
+- ### class InfoGainSelector:
+threshold, discretize (predicting vars), n_bins
+    - \_\_init__()<br>
+    - fit(): discretizes fv in n_bins quantiles, determines class entropy, discretizes x if necesssary, info_gain (class entropy - conditional entropy) select most relevant.<br>
+    - _calculate_entropy(only y): probabilities (instances of unique / total instances) then -sum(probs*log2(probs))<br>
+    - _calculate_entropy(y cond to x): values of x, cond_entropy += entropy of respective y*p_x<br>
+
+- ### class ReliefSelector:
+threshold, n_neighbors, sample_size, discrete_threshold, n_jobs
+    - \_\_init__()<br>
+    - fit(): determines type of fv (classif/regres), selected features based on n_features or threshold.<br>
+    - _fit_classification(): encode if not numeric, gets indices where y specific values, gets respective samples, nearest neighbors to the instances of x, eliminates instance, determines discrete features (less than discrete threshold values), hits and misses among neighbors, for the hits does difference, then for miss, then sums miss - hit diffs, normalizes by n_instances.<br>
+    - _fit_regression(): similar but for regression so continuous values.
+
+**create_weka_inspired_selector**<br>
