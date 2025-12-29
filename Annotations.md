@@ -216,3 +216,25 @@ CONCLUSIÓN: el objetivo del framework es dar una forma de comparar métodos de 
 - NEXT:
     - Probar con otros datasets.
     - Hacer el script para predicciones sobre los datasets filtrados.
+
+## 15/12/2025
+- Integrado Git LFS para los archivos .csv. (git lfs migrate info >> git lfs migrate import --include ...)
+- Probado el dataset Osuna.csv. Mirar cómo hacer la limpieza de ese dataset para su utilización. Por ahora ";"->"," y "n/d"->"" manualmente.
+- Problemas por lo pronto: columnas que son horas, y valores faltantes.
+
+## 16/12/2025
+- Notebook de limpieza de csv a modo de ejemplo. Para limpiar y testear el csv de Osuna.csv.
+- Hecha la limpieza, he tratado de sustituir las horas faltantes por la media pero al no lograrlo he reemplazado por 12:00.
+- Al probar la selección de atributos no da error, probar distintos métodos.
+- Por lo pronto únicamente tiene importancia el propio lag de la variable objetivo.
+
+## 29/12/2025
+- Por hacer: 
+    1. Probar algún csv en weka original y comparar con el implementado.
+    2. Al usar csv's con datos tipo horas directamente eliminar.
+    3. Revisar implementación de los que devuelven un solo atributo.
+
+- Hecho:
+    1. Limpiado correctamente el csv de osuna para hacer la prueba.
+    2. Instalado Weka y probado CFS: Weka sí selecciona varios atributos mientras que la implementación únicamente uno: la variable objetivo t-1.
+    
