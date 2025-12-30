@@ -92,7 +92,7 @@ class CFSSelector(BaseFeatureSelector):
         # Filtrar solo columnas numéricas
         numeric_cols = X.select_dtypes(include=['number']).columns.tolist()
         X_numeric = X[numeric_cols]
-        
+
         if self.verbose:
             print("Iniciando selección de características con CFS,", self.max_backtrack,"retrocesos...")
         
@@ -128,6 +128,7 @@ class CFSSelector(BaseFeatureSelector):
         
         # Iniciar búsqueda BestFirst
         selected_features = self._best_first_search(numeric_cols, X_numeric, y)
+
         # Guardar características seleccionadas
         self.selected_features_ = selected_features
         
@@ -210,7 +211,7 @@ class CFSSelector(BaseFeatureSelector):
         
         # Inicializar contador de retrocesos
         backtrack_count = 0
-        
+
         # Inicializar progreso
         if self.verbose:
             pbar = tqdm(total=100, desc="Búsqueda BestFirst")
@@ -234,7 +235,7 @@ class CFSSelector(BaseFeatureSelector):
                     
                     # Añadir a la cola de prioridad
                     queue.insert(new_subset, new_merit)
-                    
+
                     # Marcar como visitado
                     visited.add(new_subset_tuple)
                     
@@ -248,7 +249,7 @@ class CFSSelector(BaseFeatureSelector):
             if not queue.isEmpty():
                 next_item = queue.pop()
                 next_subset, next_merit = next_item
-                
+
                 # Actualizar mejor subconjunto si es necesario
                 if next_merit > best_merit:
                     best_subset = next_subset

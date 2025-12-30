@@ -237,4 +237,17 @@ CONCLUSIÓN: el objetivo del framework es dar una forma de comparar métodos de 
 - Hecho:
     1. Limpiado correctamente el csv de osuna para hacer la prueba.
     2. Instalado Weka y probado CFS: Weka sí selecciona varios atributos mientras que la implementación únicamente uno: la variable objetivo t-1.
-    
+
+## 30/12/2025
+- Los seleccionados el weka para predecir Se11VelVientoMax son Se11TMin_t-1, Se11VelViento_t-1, Se11VelVientoMax_t-1, Se11Precip_t-1
+- He revisado la implementación y lo que ocurre es que Se11VelVientoMax_t-1 tiene mérito 1 como subset unitario.
+- He empezado revisando la implementación del best_first_search que se basa en el cálculo de los méritos.
+- Después he revisado el cálculo de los méritos pero está completamente acorde con el paper oficial.
+- He probado a intentar forzar que seleccionase más características o que no pudiese seleccionar Se11VelVientoMax_t-1, pero los resultados siguen el mismo orden.
+- Haciendo prints en puntos concretos se ven los distintos subsets y sus méritos y ninguno iguala la puntuación del set unitario.
+
+-PROXIMO: probar otras implementaciones que haya o tratar de llamar a weka directamente.
+
+-HECHO: probado el wrapper, da los mismos resultados que Weka (es llamar a weka desde python).
+
+ejecutar .venv\Scripts\activate para el entorno virtual y seguir los comandos del notebook test_weka_wrapper.ipynb .
