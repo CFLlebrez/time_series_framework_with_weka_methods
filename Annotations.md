@@ -251,3 +251,6 @@ CONCLUSIÓN: el objetivo del framework es dar una forma de comparar métodos de 
 -HECHO: probado el wrapper, da los mismos resultados que Weka (es llamar a weka desde python).
 
 ejecutar .venv\Scripts\activate para el entorno virtual y seguir los comandos del notebook test_weka_wrapper.ipynb .
+
+## 02/01/2026
+- Creada una user guide, anotaciones en "observaciones rápidas"

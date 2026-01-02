@@ -137,6 +137,17 @@ def main():
                 time_col=args.time_col,  # ✅ ahora se informa la columna temporal
                 alpha=args.alpha if args.alpha else 1.0
             )
+        elif args.fs_method in ['pearson', 'ccf', 'mutual_info']: # métodos basados en correlación
+            fs_results = select_features(
+                transformed_csv,
+                os.path.join(output_folder_dir, f'feature_selection_{args.fs_method}'),
+                target_col,
+                method=args.fs_method,
+                n_features=args.fs_n_features,
+                threshold=args.fs_threshold,
+                max_lag=0,           # No se prueban lags, se hace selección sobre el csv transformado
+                time_col=args.time_col,  # ✅ ahora se informa la columna temporal
+            )
         elif args.fs_method=='sklearn_filter':
             fs_results = select_features(
                 transformed_csv,
