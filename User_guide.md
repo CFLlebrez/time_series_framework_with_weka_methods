@@ -16,9 +16,9 @@ Para los valores 'sklearn_filter' y 'weka_inspired' hay parámetros adicionales 
 
 # Observaciones rápidas (osuna_clean fv=7, ph=5, fh=3, n=3):
 - Dada la implementación del framework ccf y pearson son equivalentes (pearson probaría lags). *Pearson descartable*
-- Sequential necesita más trabajo (no funciona). *Revisar*
+- Sequential necesita más trabajo (no funciona). *Revisar* || **Revisado**: sí funciona pero las importancias son del orden e-28.
 - Genetic ha seleccionado 22 atributos (tarda mucho). *Descartable*
-- Random forest devuelve un solo atributo (selecciona 3 pero solo uno con importancia no nula). *Revisar*
+- Random forest devuelve un solo atributo (selecciona 3 pero solo uno con importancia no nula). *Revisar* || **Revisado**: similar a sequential pero orden e-08.
 - Lasso devuelve generalmente menos atributos dado que penaliza los de baja importancia hasta bajarlos a 0.
 - Elastic Net con l1_ratio=0.5 y alpha=1 (parametros default) parece que ha devuelto resultados con sentido.
 - RFE tarda en ejecutar pero devuelve resultados con sentido.

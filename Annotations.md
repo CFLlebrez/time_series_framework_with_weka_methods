@@ -257,4 +257,8 @@ ejecutar .venv\Scripts\activate para el entorno virtual y seguir los comandos de
 
 ## 11/01/2026
 - Probados los métodos genéricos, decisiones tomadas (algunos quedan por revisar).
+
+- Tras revisar, decisiones: 
+    * Descartar: Granger, redundante por la lógica que sigue; Spectral y PCA, que evalúan características en general, no para una predicción específica; Pearson, por la implementación del framework es equivalente a CCF.
+
 - Probar los de weka y sklearn y tomar decisiones.
