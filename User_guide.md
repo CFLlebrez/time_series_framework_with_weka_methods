@@ -15,8 +15,13 @@ Para los valores 'sklearn_filter' y 'weka_inspired' hay parámetros adicionales 
 * ``--weka_inspired_method`` con valores 'cfs', 'relieff', 'infogain'
 
 # Observaciones rápidas (osuna_clean fv=7, ph=5, fh=3, n=3):
-- Dada la implementación del framework ccf y pearson son equivalentes.
-- Sequential necesita más trabajo (no funciona).
-- Genetic ha seleccionado 22 atributos.
-- Random forest devuelve un solo atributo.
+- Dada la implementación del framework ccf y pearson son equivalentes (pearson probaría lags). *Pearson descartable*
+- Sequential necesita más trabajo (no funciona). *Revisar*
+- Genetic ha seleccionado 22 atributos (tarda mucho). *Descartable*
+- Random forest devuelve un solo atributo (selecciona 3 pero solo uno con importancia no nula). *Revisar*
 - Lasso devuelve generalmente menos atributos dado que penaliza los de baja importancia hasta bajarlos a 0.
+- Elastic Net con l1_ratio=0.5 y alpha=1 (parametros default) parece que ha devuelto resultados con sentido.
+- RFE tarda en ejecutar pero devuelve resultados con sentido.
+- Granger está descartado dado que lo que hace es comparar lags de una característica (a una característica predictora le hace lags y los evalúa, pero en las candidatas ya se encuentran los lags. Esto hace que no tenga sentido utilizar este método en este framework). *Descartable*
+- PCA devuelve características que no tienen mucho sentido (Devuelve DIA y lags de DIA cuando esa característica solo indica el día del año). *Descartable*
+- Spectral más de lo mismo. *Descartable*. Estos tres métodos no tratan de analizar su importancia para predecir una variable en concreto sino su contribución en la serie en general.

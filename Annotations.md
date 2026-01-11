@@ -254,3 +254,7 @@ ejecutar .venv\Scripts\activate para el entorno virtual y seguir los comandos de
 
 ## 02/01/2026
 - Creada una user guide, anotaciones en "observaciones rápidas"
+
+## 11/01/2026
+- Probados los métodos genéricos, decisiones tomadas (algunos quedan por revisar).
+- Probar los de weka y sklearn y tomar decisiones.
