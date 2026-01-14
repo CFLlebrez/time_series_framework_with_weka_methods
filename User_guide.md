@@ -25,3 +25,10 @@ Para los valores 'sklearn_filter' y 'weka_inspired' hay parámetros adicionales 
 - Granger está descartado dado que lo que hace es comparar lags de una característica (a una característica predictora le hace lags y los evalúa, pero en las candidatas ya se encuentran los lags. Esto hace que no tenga sentido utilizar este método en este framework). *Descartable*
 - PCA devuelve características que no tienen mucho sentido (Devuelve DIA y lags de DIA cuando esa característica solo indica el día del año). *Descartable*
 - Spectral más de lo mismo. *Descartable*. Estos tres métodos no tratan de analizar su importancia para predecir una variable en concreto sino su contribución en la serie en general.
+
+- SelectKBest y SelectPercentile funcionan correctamente.
+- GenericUnivariateSelect funciona, añadidos 'param' y 'strategy' aunque es complicado ajustar el número de características a seleccionar. Modos (strategy) 'fpr', 'fdr' y 'fwe' y param es el umbral de p-values máximo (se seleccionan las características cuyo p-value quede por debajo).
+
+- CFS tiene el mismo problema: selecciona una sola característica. El lag t-1 de la variable objetivo tiene demasiada relevancia.
+- Infogain parece que funciona correctamente pero en el framerwork original no puede usarse por las características del fichero.
+- ReliefF devuelve características poco relevantes, distintas a las obtenidas en el framework original.

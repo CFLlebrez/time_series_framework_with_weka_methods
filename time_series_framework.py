@@ -52,6 +52,7 @@ def main():
                         help='Número de atributos a seleccionar')
     parser.add_argument('--fs_threshold', type=float, default=None,
                         help='Umbral para la selección de atributos')
+    # Argumentos weka
     parser.add_argument('--infogain_discretize', action='store_true', 
                         help='Discretizar la variable objetivo InfoGain, depende de cuantiles n_bins')
     parser.add_argument('--infogain_nbins', type=int, default=10,
@@ -66,10 +67,17 @@ def main():
                         help='Parámetro para ReliefF de Weka')
     parser.add_argument('--relieff_n_jobs', type=int, default=1,
                         help='Parámetro para ReliefF de Weka')
+    # Argumentos lasso and elastic net
     parser.add_argument('--alpha', type=float, default=None,
                         help='Parámetro para métodos Lasso y ElasticNet')
+    # Argumentos sklearn
     parser.add_argument('--percentile', type=float, default=None,
                         help='Parámetro para SKlearn select percentile')
+    parser.add_argument('--strategy', type=str, default='fpr',
+                        choices=['fpr', 'fdr', 'fwe'],
+                        help='Parámetro para SKlearn estrategia para generic univariate select')
+    parser.add_argument('--param', type=float, default=1e-50,
+                        help='Parámetro para SKlearn generic univariate select')
     
     args = parser.parse_args()
 
@@ -158,6 +166,8 @@ def main():
                 n_features=args.fs_n_features,
                 sklearn_threshold=args.fs_threshold,
                 percentile=args.percentile,
+                strategy=args.strategy,
+                param=args.param,
                 max_lag=0,           # No se prueban lags, se hace selección sobre el csv transformado
                 time_col=args.time_col,  # ✅ ahora se informa la columna temporal
             )

@@ -262,3 +262,6 @@ ejecutar .venv\Scripts\activate para el entorno virtual y seguir los comandos de
     * Descartar: Granger, redundante por la lógica que sigue; Spectral y PCA, que evalúan características en general, no para una predicción específica; Pearson, por la implementación del framework es equivalente a CCF.
 
 - Probar los de weka y sklearn y tomar decisiones.
+
+## 14/01/2026
+- Probados weka y sklearn. Probablemente Weka descartado por diferencias con el framework original y resultados incoherentes.
