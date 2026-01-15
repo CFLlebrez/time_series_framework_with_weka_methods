@@ -265,3 +265,8 @@ ejecutar .venv\Scripts\activate para el entorno virtual y seguir los comandos de
 
 ## 14/01/2026
 - Probados weka y sklearn. Probablemente Weka descartado por diferencias con el framework original y resultados incoherentes.
+
+## 15/01/2026
+- Reflexión: Hasta ahora he cambiado el flujo inicial al que pienso que tiene más sentido; traté de ejecutar los distintos métodos implementados comprobando su funcionamiento; hice una primera prueba de predicciones en base a los resultados obtenidos; añadí al framework los parámetros y las llamadas necesarias para incluir los métodos de sklearn y weka; instalé weka para comparar los resultados de la implementación y revisé los algoritmos para tratar de corregirlos sin éxito; probé a implementar métodos de weka llamando a un wrapper en caso de querer utilizarlo; incluí un nuevo csv más largo que traté de limpiar para que el framework pudiese ejecutarse con este fichero como entrada; volví a ejecutar todos los métodos sobre ese csv mientras hacía anotaciones en la guía de usuario y tomaba decisiones de qué métodos quedarían descartados.
+
+Lo siguiente es confirmar que va por buen camino y concretar cómo se quiere el framework final, implementar las funcionalidades necesarias y finalizar después de realizar tests y comprobar su funcionamiento.
