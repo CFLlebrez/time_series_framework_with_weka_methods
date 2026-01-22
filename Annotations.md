@@ -270,3 +270,20 @@ ejecutar .venv\Scripts\activate para el entorno virtual y seguir los comandos de
 - Reflexión: Hasta ahora he cambiado el flujo inicial al que pienso que tiene más sentido; traté de ejecutar los distintos métodos implementados comprobando su funcionamiento; hice una primera prueba de predicciones en base a los resultados obtenidos; añadí al framework los parámetros y las llamadas necesarias para incluir los métodos de sklearn y weka; instalé weka para comparar los resultados de la implementación y revisé los algoritmos para tratar de corregirlos sin éxito; probé a implementar métodos de weka llamando a un wrapper en caso de querer utilizarlo; incluí un nuevo csv más largo que traté de limpiar para que el framework pudiese ejecutarse con este fichero como entrada; volví a ejecutar todos los métodos sobre ese csv mientras hacía anotaciones en la guía de usuario y tomaba decisiones de qué métodos quedarían descartados.
 
 Lo siguiente es confirmar que va por buen camino y concretar cómo se quiere el framework final, implementar las funcionalidades necesarias y finalizar después de realizar tests y comprobar su funcionamiento.
+
+## 22/01/2026
+- Próximos pasos después de comprobación de Pablo Reina:
+    * Ver el tema de mantener la variable objetivo original.
+    * Probar CFS con un dataset propio/kaggle
+    * Probar a hacer predicciones sin selección (todos los atributos) y tras la selección de los distintos atributos para ver que da resultados con sentido en general.
+
+- Hecho:
+    * Mantener variable objetivo original: comprobado con ria1_test_transformer (contiente csv transformado de estacion.csv). Revisado el código de time_series_transformer_optimized.py y tiene sentido. El resultado consta de time_col, variables_t-ph, variables_t-ph+1, ..., fv, fv_t+1, ..., fv_t+fh.
+    * Creado "own_dataset.csv" en el que y=sin(x1) + sin(x2).
+    * Probado CFS en el dataset propio y vuelve a tener el mismo problema: selecciona y_t-1.
+
+- Lo que queda es hacer pruebas de predicción antes y después de la selección.
+
+- Re-adaptado el transformer para contener todos los lags incluyendo el instante actual de todas las variables y los instantes futuros de la variable objetivo.
+
+- Siguiente, probar de nuevo que tras los cambios las selecciones funcionen correctamente y pasar a las predicciones.

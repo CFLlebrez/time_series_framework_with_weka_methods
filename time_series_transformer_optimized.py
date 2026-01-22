@@ -57,33 +57,38 @@ def transform_time_series(input_file, output_file, fv, fh, ph, original_fv, time
     transformed_data = []
     fechas_out = []
 
-    print("Transforming data...")
-    for i in range(len(df) - (ph + fh) + 1):
+    print("Transforming data...") #[..., t-ph, t-1, t0, t+1, t+fh]
+    for i in range(len(df) - (ph + fh)):
         # Pasado de todas las variables (incluye FV)
-        past_window = df.iloc[i:i+ph].values
+        if ph!=0:
+            past_window = df.iloc[i:i+ph].values
         # Futuro solo de la variable objetivo usando nombre
-        future_window = df.iloc[i+ph:i+ph+fh][fv_name].values
-        # Valor actual de la FV (t0)
-        current_fv = df.iloc[i+ph-1][fv_name]
+        if fh!=0:
+            future_window = df.iloc[i+ph+1:i+ph+fh+1][fv_name].values
+        # Valor actual de las variables (t0)
+        current_values = df.iloc[i+ph]
 
         row = []
-        for j in range(ph):
-            row.extend(past_window[j])  # Pasado de todas las variables
-        row.append(current_fv)          # Valor actual de la FV
-        row.extend(future_window)       # Horizontes futuros
+
+        if ph!=0:
+            for j in range(ph):
+                row.extend(past_window[j])  # Pasado de todas las variables
+        row.extend(current_values)          # Valor actual de la FV
+        if fh!=0:
+            row.extend(future_window)       # Horizontes futuros
 
         transformed_data.append(row)
 
         # Fecha asociada al instante t = última del pasado
         if fechas is not None:
-            fechas_out.append(fechas.iloc[i+ph-1])
+            fechas_out.append(fechas.iloc[i+ph])
 
     # Construir nombres de columnas
     transformed_columns = []
     for t in range(ph):
         for col in columns:  # Incluye FV
             transformed_columns.append(f"{col}_t-{ph-t}")
-    transformed_columns.append(f"{fv_name}")  # FV actual
+    transformed_columns.extend(columns)
     for t in range(fh):
         transformed_columns.append(f"{fv_name}_t+{t+1}")  # Horizontes futuros
 
