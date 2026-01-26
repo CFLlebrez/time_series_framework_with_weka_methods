@@ -287,3 +287,8 @@ Lo siguiente es confirmar que va por buen camino y concretar cómo se quiere el 
 - Re-adaptado el transformer para contener todos los lags incluyendo el instante actual de todas las variables y los instantes futuros de la variable objetivo.
 
 - Siguiente, probar de nuevo que tras los cambios las selecciones funcionen correctamente y pasar a las predicciones.
+
+## 26/01/2026
+- Probadas algunas selecciones con own_dataset. Lasso da importancia 0 a todas las variables, probablemente por tener importancia baja.
+
+- Terminar probando el resto y creando un script para predicción.
