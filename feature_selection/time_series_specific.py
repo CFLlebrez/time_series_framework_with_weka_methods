@@ -250,7 +250,7 @@ class PCASelector(BaseFeatureSelector):
         feature_importances = {}
         for feature in numeric_cols:
             # Suma ponderada de los coeficientes de cada componente, ponderados por la varianza explicada
-            importance = sum(abs(self.components_.loc[f'PC{i+1}', feature]) * self.explained_variance_ratio_[i] 
+            importance = sum(abs(self.components_.loc[f'PC{i+1}', feature]) * self.explained_variance_ratio_.iloc[i] 
                              for i in range(n_components))
             feature_importances[feature] = importance
         
