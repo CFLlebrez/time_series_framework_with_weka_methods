@@ -321,3 +321,12 @@ pca y spectral
 - Implementar los scripts para predicción y empezar comparando con y sin selección de atributos sobre varios datasets.
 
 
+## 26/02/2026
+- Reunión:
+    * Evolutivos paralelizar: máquinas por VPN de la US.
+    * CFS no evaluar la búsqueda sino la medida (probar con otra búsqueda que no sea tan rápida)
+    * Implementar predicción y evaluar correctamente con benchmarks los métodos.
+- Buscar csv's con características concretas: número de variables, tamaño dataset, datasets propios (Benchmarks - Datasets de Pablo Reina en github en el Readme).
+- Realizar predicciones con los distintos métodos de selección y compararlos con la predicción total (comparar estabilidad (índice de Jaccard), precisión (MAE, RMSE, R2...) y cómputo (tiempo de ejecución)).
+
+- Últimas pruebas sin lags ni steps, revisar que el transformer siga generando correctamente los csv transformados.
