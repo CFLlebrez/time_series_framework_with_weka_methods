@@ -327,6 +327,10 @@ pca y spectral
     * CFS no evaluar la búsqueda sino la medida (probar con otra búsqueda que no sea tan rápida)
     * Implementar predicción y evaluar correctamente con benchmarks los métodos.
 - Buscar csv's con características concretas: número de variables, tamaño dataset, datasets propios (Benchmarks - Datasets de Pablo Reina en github en el Readme).
-- Realizar predicciones con los distintos métodos de selección y compararlos con la predicción total (comparar estabilidad (índice de Jaccard), precisión (MAE, RMSE, R2...) y cómputo (tiempo de ejecución)).
+- Realizar predicciones con los distintos métodos de selección y compararlos con la predicción total (comparar estabilidad (índice de Jaccard), precisión (MAE, RMSE, R2, sMAPE...) y cómputo (tiempo de ejecución)).
 
 - Últimas pruebas sin lags ni steps, revisar que el transformer siga generando correctamente los csv transformados.
+
+## 4/03/2026
+- Ajustar csv's generados (transformado y filtrado).
+- Crear el script de prediccion ya planeado.
