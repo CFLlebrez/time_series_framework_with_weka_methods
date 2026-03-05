@@ -334,3 +334,8 @@ pca y spectral
 ## 4/03/2026
 - Ajustar csv's generados (transformado y filtrado).
 - Crear el script de prediccion ya planeado.
+
+## 5/03/2026
+- Modificado para que la selección no genere un csv filtrado sino un json con metadatos.
+- Creado el script de predicción y evaluación.
+- Siguiente: Que los resultados se almacenen en un fichero bien presentado.

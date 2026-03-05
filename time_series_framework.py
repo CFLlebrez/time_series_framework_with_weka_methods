@@ -14,7 +14,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from feature_selection import select_features
-from feature_selection.visualization import generate_comprehensive_report
+from evaluation import PredictiveEvaluator
 
 
 def main():
@@ -78,6 +78,8 @@ def main():
                         help='Parámetro para SKlearn estrategia para generic univariate select')
     parser.add_argument('--param', type=float, default=1e-50,
                         help='Parámetro para SKlearn generic univariate select')
+    # Argumento para evaluacion
+    parser.add_argument('--evaluation', action='store_true', help='Aplicar evaluación del método')
     
     args = parser.parse_args()
 
@@ -132,6 +134,7 @@ def main():
     
     # --- Paso 2: Selección de atributos (opcional) ---
     if args.feature_selection:
+        print("\n" + "-"*40)
         print(f"\nAplicando selección de atributos usando método '{args.fs_method}'...")
         if args.fs_method in ['lasso', 'elastic_net']:
             fs_results = select_features(
@@ -218,6 +221,30 @@ def main():
         print(f"\n[INFO] Metadatos de selección guardados en: {json_path}")
         print(f"Prediciendo horizonte: {target_columns}")
     
+    if args.evaluation:
+        print("\n" + "-"*40)
+        print("INICIANDO EVALUACIÓN DE PREDICCIÓN")
+        print("-"*40)
+        
+        try:
+            # Inicializamos el evaluador (puedes parametrizar n_splits si quieres)
+            evaluator = PredictiveEvaluator(n_splits=5)
+            
+            # Ejecutamos la comparativa Baseline vs Filtrado
+            # transformed_csv es la ruta del archivo que generó el Paso 1
+            report = evaluator.run_full_evaluation(transformed_csv, json_path, args.time_col)
+            
+            # Guardar el reporte de métricas en un CSV para el paper
+            final_report_path = os.path.join(output_folder_dir, f"evaluation_report_{args.fs_method}.csv")
+            report.to_csv(final_report_path, index=False)
+            
+            print(f"\n[OK] Informe comparativo guardado en: {final_report_path}")
+            
+        except Exception as e:
+            print(f"\n[ERROR] No se pudo completar la evaluación predictiva: {e}")
+            import traceback
+            traceback.print_exc()
+            
     print("\nProceso completo finalizado.")
 
 
