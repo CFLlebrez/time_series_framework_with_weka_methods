@@ -34,7 +34,7 @@ def transform_time_series(input_file, output_file, fv, fh, ph, original_fv, time
     df = pd.read_csv(input_file)
     # Guardar indice por si se modifica
     fv_final = fv
-    # Separar columna temporal si existe
+    # Separar columna temporal (Framework modificado para que sea necesaria)
     fechas = None
     if time_col is not None:
         if time_col not in df.columns:
@@ -45,7 +45,7 @@ def transform_time_series(input_file, output_file, fv, fh, ph, original_fv, time
             raise ValueError(f"Could not parse '{time_col}' as datetime.")
         fechas = df[time_col].copy()
         df = df.drop(columns=[time_col])
-        fv_final-=1
+        fv_final-=1 # Para localizar correctamente la variable objetivo tras eliminar la fecha (asume fecha siempre entre las primeras columnas)
 
     # Columnas de trabajo
     columns = df.columns.tolist()

@@ -11,6 +11,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import json
 from tqdm import tqdm
 
 # Importar selectores de características
@@ -171,27 +172,32 @@ def generate_feature_importance_report(selector, output_dir, prefix='feature_imp
     
     return report_path, plot_path
 
-
-def filter_data_with_selected_features(X, selected_features, output_file=None):
+def save_selection_json(output_path, method_name, selected_features, target_cols, elapsed_time, input_file):
     """
-    Filtra los datos para incluir solo las características seleccionadas.
+    Genera el archivo de metadatos para el evaluador.
     
     Args:
-        X (DataFrame): Datos originales.
+        output_path (str): Ruta para guardar el JSON.
+        method_name (str): nombre del método
         selected_features (list): Lista de características seleccionadas.
-        output_file (str, optional): Ruta para guardar el CSV filtrado.
+        target_cols (list): Lista de variable objetivo y steps (si aplica)
+        elapsed_time (time): tiempo de selección
+        input_file (str): Ruta del fichero de entrada.
         
     Returns:
-        DataFrame: Datos filtrados.
-    """
-    # Filtrar datos
-    X_filtered = X[selected_features]
-    
-    # Guardar CSV si se especifica ruta
-    if output_file:
-        X_filtered.to_csv(output_file, index=False)
-    
-    return X_filtered
+        DataFrame: Datos filtrados."""
+    metadata = {
+        "experiment_info": {
+            "method": method_name,
+            "input_file": os.path.basename(input_file),
+            "date": pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
+        },
+        "selected_features": list(selected_features),
+        "target_columns": list(target_cols),
+        "selection_time_seconds": round(elapsed_time, 4)
+    }
+    with open(output_path, 'w', encoding='utf-8') as f:
+        json.dump(metadata, f, indent=4)
 
 
 def select_features(input_file, output_dir, target_col, method='random_forest', 
@@ -262,10 +268,25 @@ def select_features(input_file, output_dir, target_col, method='random_forest',
         if fechas is not None:
             df_filtered.insert(0, time_col, fechas)
 
-        df_filtered.to_csv(filtered_csv_path, index=False)
+        # cambiado a json -> df_filtered.to_csv(filtered_csv_path, index=False)
+
+        # Identificar las columnas target (instantes futuros) para el JSON
+        future_targets = [c for c in df.columns if c.startswith(f"{target_col}_t+")]
+        all_targets = [target_col] + future_targets # t0 + horizontes
+
+        # Guardar el JSON
+        json_path = os.path.join(output_dir, f"selection_metadata_{method}.json")
+        import time
+        # Nota: Tendrás que medir el tiempo de ejecución del fit para el JSON
+        start_time = time.time()
+        selector.fit(X, y)
+        elapsed = time.time() - start_time
     
+    save_selection_json(json_path, method, selected_features, all_targets, elapsed, input_file)
     return {
         'selected_features': selected_features,
+        'target_columns': all_targets, # Añadido para horizonte completo
+        'json_metadata_path': json_path, # Añadido para metadatos
         'n_selected': len(selected_features),
         'feature_importances': selector.get_feature_importances(),
         'report_path': report_path,

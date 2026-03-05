@@ -114,7 +114,7 @@ def main():
     
     output_file = os.path.join(output_folder_dir, f'transformed_data_fv{args.fv}_fh{args.fh}_ph{args.ph}.csv')
     
-    if not os.path.isfile(output_file):  # ✅ corregido: solo crea si no existe
+    if not os.path.isfile(output_file):  #  corregido: solo crea si no existe
         transform_time_series(
             input_folder_dir,
             output_file,
@@ -122,7 +122,7 @@ def main():
             args.fh,
             args.ph,
             args.fv,         # original_fv = mismo índice en este punto
-            args.time_col    # ✅ se pasa la columna temporal explícitamente
+            args.time_col    #  se pasa la columna temporal explícitamente
         )
         print(f"\nTransformación completada. Resultados guardados en: {output_file}")
     else:
@@ -142,7 +142,7 @@ def main():
                 n_features=args.fs_n_features,
                 threshold=args.fs_threshold,
                 max_lag=0,           # No se prueban lags, se hace selección sobre el csv transformado
-                time_col=args.time_col,  # ✅ ahora se informa la columna temporal
+                time_col=args.time_col,  #  ahora se informa la columna temporal
                 alpha=args.alpha if args.alpha else 1.0
             )
         elif args.fs_method in ['pearson', 'ccf', 'mutual_info']: # métodos basados en correlación
@@ -154,7 +154,7 @@ def main():
                 n_features=args.fs_n_features,
                 threshold=args.fs_threshold,
                 max_lag=0,           # No se prueban lags, se hace selección sobre el csv transformado
-                time_col=args.time_col,  # ✅ ahora se informa la columna temporal
+                time_col=args.time_col,  #  ahora se informa la columna temporal
             )
         elif args.fs_method=='sklearn_filter':
             fs_results = select_features(
@@ -169,7 +169,7 @@ def main():
                 strategy=args.strategy,
                 param=args.param,
                 max_lag=0,           # No se prueban lags, se hace selección sobre el csv transformado
-                time_col=args.time_col,  # ✅ ahora se informa la columna temporal
+                time_col=args.time_col,  #  ahora se informa la columna temporal
             )
         elif args.fs_method=='weka_inspired':
             fs_results = select_features(
@@ -188,9 +188,9 @@ def main():
                 discrete_threshold=args.relieff_discrete_threshold,
                 n_jobs=args.relieff_n_jobs,
                 max_lag=0,           # No se prueban lags, se hace selección sobre el csv transformado
-                time_col=args.time_col,  # ✅ ahora se informa la columna temporal
+                time_col=args.time_col,  #  ahora se informa la columna temporal
             )
-        else:
+        else: # Métodos sin parámetros específicos
             fs_results = select_features(
                 transformed_csv,
                 os.path.join(output_folder_dir, f'feature_selection_{args.fs_method}'),
@@ -199,11 +199,13 @@ def main():
                 n_features=args.fs_n_features,
                 threshold=args.fs_threshold,
                 max_lag=0,           # No se prueban lags, se hace selección sobre el csv transformado
-                time_col=args.time_col,  # ✅ ahora se informa la columna temporal
+                time_col=args.time_col,  #  ahora se informa la columna temporal
             )
 
-        
+
         selected_features = fs_results['selected_features']
+        target_columns = fs_results['target_columns']
+        
         print(f"\nCaracterísticas seleccionadas ({len(selected_features)}):")
         for i, feature in enumerate(selected_features, 1):
             importance = fs_results['feature_importances'].get(feature, 'N/A')
@@ -212,8 +214,9 @@ def main():
             else:
                 print(f"{i}. {feature} (importancia: {importance})")
         
-        filtered_csv = fs_results['filtered_csv_path']
-        print(f"\nCSV filtrado generado: {filtered_csv}")
+        json_path = fs_results['json_metadata_path']
+        print(f"\n[INFO] Metadatos de selección guardados en: {json_path}")
+        print(f"Prediciendo horizonte: {target_columns}")
     
     print("\nProceso completo finalizado.")
 
