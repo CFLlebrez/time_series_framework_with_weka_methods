@@ -339,3 +339,9 @@ pca y spectral
 - Modificado para que la selección no genere un csv filtrado sino un json con metadatos.
 - Creado el script de predicción y evaluación.
 - Siguiente: Que los resultados se almacenen en un fichero bien presentado.
+
+## 9/03/2026
+- Mejorada la consistencia de los reports (weka_inspired y sklearn_filter era el mismo para los métodos de cada pack entonces se sobreescribían).
+- Añadida función para generar un report completo (se añaden los distintos métodos como filas) para cada combinación de parámetros de entrada.
+
+Siguiente: Buscar la forma de generar resultados de una ejecución, evaluar las opciones e implementar la más indicada.

@@ -1,8 +1,8 @@
 {
     "experiment_info": {
-        "method": "weka_inspired_infogain",
+        "method": "lasso",
         "input_file": "transformed_data_fv4_fh0_ph0.csv",
-        "date": "2026-03-09 20:47:48"
+        "date": "2026-03-09 20:49:23"
     },
     "selected_features": [
         "x1",
@@ -11,5 +11,5 @@
     "target_columns": [
         "y"
     ],
-    "selection_time_seconds": 0.6732
+    "selection_time_seconds": 0.015
 }

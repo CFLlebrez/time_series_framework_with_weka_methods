@@ -186,6 +186,7 @@ def save_selection_json(output_path, method_name, selected_features, target_cols
         
     Returns:
         DataFrame: Datos filtrados."""
+    
     metadata = {
         "experiment_info": {
             "method": method_name,
@@ -245,12 +246,22 @@ def select_features(input_file, output_dir, target_col, method='random_forest',
         print(f"Seleccionadas {len(selected_features)} características de {X.shape[1]}")
     
     # Informe
+        
+    # Crear un nombre de método descriptivo para el JSON
+    if method == 'sklearn_filter':
+        method_label = f"sklearn_filter_{kwargs.get('sklearn_method')}"
+    elif method == 'weka_inspired':
+        method_label = f"weka_inspired_{kwargs.get('weka_inspired_method')}"
+    else:
+        method_label = method
+    json_path = os.path.join(output_dir, f"selection_metadata_{method_label}.json")
+
     report_path, plot_path = None, None
     if generate_report:
         if verbose:
             print("Generando informe de importancia de características...")
         report_path, plot_path = generate_feature_importance_report(
-            selector, output_dir, prefix=f"{method}_feature_importance"
+            selector, output_dir, prefix=f"{method_label}_feature_importance"
         )
     
     # CSV filtrado
@@ -282,7 +293,14 @@ def select_features(input_file, output_dir, target_col, method='random_forest',
         selector.fit(X, y)
         elapsed = time.time() - start_time
     
-    save_selection_json(json_path, method, selected_features, all_targets, elapsed, input_file)
+    if method == 'sklearn_filter':
+        method_label = f"sklearn_filter_{kwargs.get('sklearn_method')}"
+    elif method == 'weka_inspired':
+        method_label = f"weka_inspired_{kwargs.get('weka_inspired_method')}"
+    else:
+        method_label = method
+
+    save_selection_json(json_path, method_label, selected_features, all_targets, elapsed, input_file)
     return {
         'selected_features': selected_features,
         'target_columns': all_targets, # Añadido para horizonte completo

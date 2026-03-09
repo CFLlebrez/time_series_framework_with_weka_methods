@@ -227,18 +227,27 @@ def main():
         print("-"*40)
         
         try:
-            # Inicializamos el evaluador (puedes parametrizar n_splits si quieres)
             evaluator = PredictiveEvaluator(n_splits=5)
             
-            # Ejecutamos la comparativa Baseline vs Filtrado
-            # transformed_csv es la ruta del archivo que generó el Paso 1
+            # --- SOLUCIÓN PUNTO 1: Identificador único por método específico ---
+            if args.fs_method == 'sklearn_filter':
+                specific_method = f"sklearn_filter_{args.sklearn_method}"
+            elif args.fs_method == 'weka_inspired':
+                specific_method = f"weka_inspired_{args.weka_inspired_method}"
+            else:
+                specific_method = args.fs_method
+
             report = evaluator.run_full_evaluation(transformed_csv, json_path, args.time_col)
             
-            # Guardar el reporte de métricas en un CSV para el paper
-            final_report_path = os.path.join(output_folder_dir, f"evaluation_report_{args.fs_method}.csv")
+            # Guardar reporte individual
+            final_report_path = os.path.join(output_folder_dir, f"evaluation_report_{specific_method}.csv")
             report.to_csv(final_report_path, index=False)
             
-            print(f"\n[OK] Informe comparativo guardado en: {final_report_path}")
+            # Actualizar reporte maestro comparativo
+            master_path = evaluator.update_master_report(report, output_folder_dir, f"_fv{args.fv}_fh{args.fh}_ph{args.ph}")
+            
+            print(f"\n[OK] Informe individual: {final_report_path}")
+            print(f"[OK] Master Report actualizado: {master_path}")
             
         except Exception as e:
             print(f"\n[ERROR] No se pudo completar la evaluación predictiva: {e}")

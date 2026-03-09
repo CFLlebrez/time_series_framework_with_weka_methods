@@ -133,3 +133,43 @@ class PredictiveEvaluator:
         print("-"*60)
         
         return report_df
+    
+    def update_master_report(self, report_df, output_dir, params_str):
+        """
+        Mantiene un único archivo CSV con los resultados de todos los experimentos.
+        """
+        master_path = os.path.join(output_dir, f"MASTER_COMPARATIVE_REPORT{params_str}.csv")
+        
+        # El reporte actual tiene: | Métrica | Baseline (Todo) | Filtrado (NombreMetodo) |
+        method_column_name = report_df.columns[2]
+        
+        # Extraer datos para la nueva fila
+        new_row = {
+            'Metodo': method_column_name.replace('Filtrado (', '').replace(')', ''),
+            'Num_Vars': report_df.iloc[0, 2],
+            'RMSE': report_df.iloc[1, 2],
+            'MAE': report_df.iloc[2, 2],
+            'R2': report_df.iloc[3, 2],
+            'T_Inferencia': report_df.iloc[4, 2]
+        }
+        
+        if not os.path.exists(master_path):
+            # Si el archivo no existe, creamos el Baseline y la primera fila del método
+            baseline_row = {
+                'Metodo': 'BASELINE_FULL',
+                'Num_Vars': report_df.iloc[0, 1],
+                'RMSE': report_df.iloc[1, 1],
+                'MAE': report_df.iloc[2, 1],
+                'R2': report_df.iloc[3, 1],
+                'T_Inferencia': report_df.iloc[4, 1]
+            }
+            master_df = pd.DataFrame([baseline_row, new_row])
+        else:
+            # Si ya existe, cargamos y actualizamos
+            master_df = pd.read_csv(master_path)
+            # Eliminamos la fila si ya existía para este método específico para actualizarla
+            master_df = master_df[master_df['Metodo'] != new_row['Metodo']]
+            master_df = pd.concat([master_df, pd.DataFrame([new_row])], ignore_index=True)
+        
+        master_df.to_csv(master_path, index=False)
+        return master_path
