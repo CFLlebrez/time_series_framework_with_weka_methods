@@ -8,6 +8,7 @@ Nuevo flujo:
 2. Después, si se indica, se aplica selección de atributos sobre el CSV transformado.
 """
 
+import json
 import os
 import argparse
 import pandas as pd
@@ -223,34 +224,49 @@ def main():
     
     if args.evaluation:
         print("\n" + "-"*40)
-        print("INICIANDO EVALUACIÓN DE PREDICCIÓN")
+        print("INICIANDO TUNING Y EVALUACIÓN")
         print("-"*40)
         
         try:
-            evaluator = PredictiveEvaluator(n_splits=5)
+            from tuner import tune_knn_k
             
-            # --- SOLUCIÓN PUNTO 1: Identificador único por método específico ---
+            # 1. Identificar el nombre específico del método para el reporte
             if args.fs_method == 'sklearn_filter':
-                specific_method = f"sklearn_filter_{args.sklearn_method}"
+                method_label = f"sklearn_{args.sklearn_method}"
             elif args.fs_method == 'weka_inspired':
-                specific_method = f"weka_inspired_{args.weka_inspired_method}"
+                method_label = f"weka_{args.weka_inspired_method}"
             else:
-                specific_method = args.fs_method
+                method_label = args.fs_method
 
+            # 2. Cargar datos para Tuning (K del KNN)
+            df_eval = pd.read_csv(transformed_csv)
+            df_num = df_eval.select_dtypes(include=[np.number])
+            
+            with open(json_path, 'r') as f:
+                meta = json.load(f)
+            
+            # Buscamos el mejor K usando todas las variables (Baseline) para ser justos
+            target_cols = meta['target_columns']
+            all_feats = [c for c in df_num.columns if c not in target_cols]
+            
+            best_k = tune_knn_k(df_num, all_feats, target_cols)
+            
+            # 3. Evaluación oficial con el K óptimo encontrado
+            evaluator = PredictiveEvaluator(n_splits=5, n_neighbors=best_k)
             report = evaluator.run_full_evaluation(transformed_csv, json_path, args.time_col)
             
-            # Guardar reporte individual
-            final_report_path = os.path.join(output_folder_dir, f"evaluation_report_{specific_method}.csv")
+            # 4. Guardar y actualizar máster
+            params_str = f"_fv{args.fv}_fh{args.fh}_ph{args.ph}"
+            final_report_path = os.path.join(output_folder_dir, f"evaluation_report_{method_label}.csv")
             report.to_csv(final_report_path, index=False)
             
-            # Actualizar reporte maestro comparativo
-            master_path = evaluator.update_master_report(report, output_folder_dir, f"_fv{args.fv}_fh{args.fh}_ph{args.ph}")
+            master_path = evaluator.update_master_report(report, output_folder_dir, params_str)
             
-            print(f"\n[OK] Informe individual: {final_report_path}")
+            print(f"\n[OK] K óptimo utilizado: {best_k}")
             print(f"[OK] Master Report actualizado: {master_path}")
             
         except Exception as e:
-            print(f"\n[ERROR] No se pudo completar la evaluación predictiva: {e}")
+            print(f"\n[ERROR] Error en evaluación: {e}")
             import traceback
             traceback.print_exc()
             

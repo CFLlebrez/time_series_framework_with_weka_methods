@@ -150,7 +150,8 @@ class PredictiveEvaluator:
             'RMSE': report_df.iloc[1, 2],
             'MAE': report_df.iloc[2, 2],
             'R2': report_df.iloc[3, 2],
-            'T_Inferencia': report_df.iloc[4, 2]
+            'T_Inferencia': report_df.iloc[4, 2],
+            'K_Optimo': self.n_neighbors
         }
         
         if not os.path.exists(master_path):

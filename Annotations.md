@@ -345,3 +345,8 @@ pca y spectral
 - Añadida función para generar un report completo (se añaden los distintos métodos como filas) para cada combinación de parámetros de entrada.
 
 Siguiente: Buscar la forma de generar resultados de una ejecución, evaluar las opciones e implementar la más indicada.
+
+## 10/03/2026
+- Añadido fichero para tunear parámetros, por ahora únicamente KNN.
+
+Siguiente: Añadir la función para el resto de parámetros para la selección de atributos.
