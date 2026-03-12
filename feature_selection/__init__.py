@@ -120,56 +120,31 @@ def prepare_data_for_selection(df, target_col, include_target=False):
 
 
 
-def generate_feature_importance_report(selector, output_dir, prefix='feature_importance'):
-    """
-    Genera un informe de importancia de características y visualizaciones.
-    
-    Args:
-        selector (BaseFeatureSelector): Selector de características ajustado.
-        output_dir (str): Directorio para guardar los resultados.
-        prefix (str): Prefijo para los nombres de archivo.
-        
-    Returns:
-        tuple: (report_path, plot_path) rutas a los archivos generados.
-    """
-    # Crear directorio si no existe
-    os.makedirs(output_dir, exist_ok=True)
-    
-    # Obtener importancias
-    importances = selector.get_feature_importances()
-    
-    # Ordenar por importancia
-    sorted_importances = importances.sort_values(ascending=False)
-    
-    # Crear DataFrame para el informe
+def generate_feature_importance_report(importances, selected_list, output_dir, prefix):
+    """Versión corregida para evitar warnings de paleta en Seaborn."""
     report_df = pd.DataFrame({
-        'Feature': sorted_importances.index,
-        'Importance': sorted_importances.values,
-        'Selected': [feature in selector.get_selected_features() for feature in sorted_importances.index]
-    })
-    
-    # Guardar informe
-    report_path = os.path.join(output_dir, f"{prefix}_report.csv")
-    report_df.to_csv(report_path, index=False)
-    
-    # Generar visualización
+        'Feature': importances.index,
+        'Importance': importances.values,
+        'Selected': [f in selected_list for f in importances.index]
+    }).sort_values(by='Importance', ascending=False)
+
     plt.figure(figsize=(12, 8))
     
-    # Crear gráfico de barras
-    ax = sns.barplot(x='Importance', y='Feature', data=report_df.head(30), 
-                    hue='Selected', palette=['lightgray', 'darkblue'])
+    # Definimos la paleta de forma dinámica según lo que haya en el set de datos
+    unique_selected = report_df.head(30)['Selected'].unique()
+    palette = {True: 'darkblue', False: 'lightgray'}
     
-    # Añadir títulos y etiquetas
-    plt.title('Importancia de Características')
-    plt.xlabel('Importancia')
-    plt.ylabel('Característica')
+    sns.barplot(x='Importance', y='Feature', data=report_df.head(30), 
+                hue='Selected', palette=palette, legend=False)
+    
+    plt.title(f'Importancia de Características - {prefix}')
     plt.tight_layout()
-    
-    # Guardar visualización
     plot_path = os.path.join(output_dir, f"{prefix}_plot.png")
     plt.savefig(plot_path)
     plt.close()
     
+    report_path = os.path.join(output_dir, f"{prefix}_report.csv")
+    report_df.to_csv(report_path, index=False)
     return report_path, plot_path
 
 def save_selection_json(output_path, method_name, selected_features, target_cols, elapsed_time, input_file):
@@ -205,112 +180,106 @@ def select_features(input_file, output_dir, target_col, method='random_forest',
                    n_features=None, threshold=None, time_col=None, include_target=False,
                    generate_report=True, generate_filtered_csv=True, **kwargs):
     """
-    Función principal para selección de características en series temporales.
-    (Se asume que los lags ya están creados antes de esta fase).
+    Función principal para selección de características con control estricto de n_features.
     """
+    import time
     verbose = kwargs.get('verbose', True)
-    
-    # Crear directorio si no existe
     os.makedirs(output_dir, exist_ok=True)
     
-    # Cargar datos transformados
-    if verbose:
-        print(f"Cargando datos desde {input_file}...")
+    # Carga de datos
     df = pd.read_csv(input_file)
-
-    # Separar columna temporal si existe
     fechas = None
     if time_col and time_col in df.columns:
         fechas = df[time_col].copy()
         df = df.drop(columns=[time_col])
-    
-    # Preparar datos (sin generar lags, ya vienen creados)
-    if verbose:
-        print("Preparando datos para selección (sin recalcular lags)...")
 
+    # Preparar X e y
     X, y = prepare_data_for_selection(df, target_col, include_target=include_target)
     
-    # Crear selector
-    if verbose:
-        print(f"Creando selector de características usando método '{method}'...")
+    # Crear el selector
     selector = create_feature_selector(method, n_features, threshold, verbose=verbose, **kwargs)
     
-    # Ajustar selector
     if verbose:
+        print(f"Creando selector de características usando método '{method}'...")
         print("Ajustando selector de características...")
+    
+    # Medir tiempo de ejecución del ajuste original
+    start_time = time.time()
     selector.fit(X, y)
+    elapsed = time.time() - start_time
     
-    # Obtener características seleccionadas
-    selected_features = selector.get_selected_features()
-    if verbose:
-        print(f"Seleccionadas {len(selected_features)} características de {X.shape[1]}")
-    
-    # Informe
+    # 1. Obtener características iniciales y sus importancias
+    selected_features = list(selector.get_selected_features())
+    importances = selector.get_feature_importances()
+    print(f"DEBUG: Variables detectadas por el selector: {len(selected_features)}")
+    print(f"DEBUG: ¿Existen importancias?: {len(importances) > 0}")
+    print(f"DEBUG: Valor de n_features pedido: {n_features}")
+    # 2. CONTROL ESTRICTO DEL NÚMERO DE ATRIBUTOS (Post-procesamiento)
+    # Si el método devuelve más de lo pedido (común en Lasso o RF), recortamos manualmente
+    if n_features is not None and len(selected_features) > n_features:
+        if verbose:
+            print(f"[POST-PROCESS] El método devolvió {len(selected_features)} variables. "
+                  f"Recortando a las {n_features} más importantes según su peso.")
         
-    # Crear un nombre de método descriptivo para el JSON
+        # Crear un diccionario de importancia absoluta para las variables seleccionadas
+        feat_imp = {f: abs(importances.get(f, 0)) for f in selected_features}
+        
+        # Ordenar de mayor a menor y tomar exactamente n_features
+        selected_features = sorted(feat_imp, key=feat_imp.get, reverse=True)[:n_features]
+
+    if verbose:
+        print(f"Resultado final: {len(selected_features)} características seleccionadas.")
+
+    # Definir etiqueta del método para archivos
     if method == 'sklearn_filter':
         method_label = f"sklearn_filter_{kwargs.get('sklearn_method')}"
     elif method == 'weka_inspired':
         method_label = f"weka_inspired_{kwargs.get('weka_inspired_method')}"
     else:
         method_label = method
-    json_path = os.path.join(output_dir, f"selection_metadata_{method_label}.json")
 
+    # 3. Generar informe visual y CSV de importancias
     report_path, plot_path = None, None
     if generate_report:
-        if verbose:
-            print("Generando informe de importancia de características...")
         report_path, plot_path = generate_feature_importance_report(
-            selector, output_dir, prefix=f"{method_label}_feature_importance"
+            importances, selected_features, output_dir, prefix=f"{method_label}_feature_importance"
         )
     
-    # CSV filtrado
+    # 4. Generar CSV filtrado (Opcional)
     filtered_csv_path = None
     if generate_filtered_csv:
         if verbose:
             print("Generando CSV filtrado con características seleccionadas + variable objetivo...")
         filtered_csv_path = os.path.join(output_dir, f"filtered_data_{method}.csv")
         
-        # Subconjunto con features seleccionadas
+        # Subconjunto con features seleccionadas finales
         X_selected = X[selected_features]
         df_filtered = pd.concat([X_selected, y], axis=1)
 
-        # Reinsertar columna temporal si estaba presente
         if fechas is not None:
             df_filtered.insert(0, time_col, fechas)
 
-        # cambiado a json -> df_filtered.to_csv(filtered_csv_path, index=False)
+        # Si deseas guardar el CSV físicamente, descomenta la siguiente línea:
+        # df_filtered.to_csv(filtered_csv_path, index=False)
 
-        # Identificar las columnas target (instantes futuros) para el JSON
-        future_targets = [c for c in df.columns if c.startswith(f"{target_col}_t+")]
-        all_targets = [target_col] + future_targets # t0 + horizontes
+    # 5. Identificar las columnas target (instantes futuros) para el JSON
+    future_targets = [c for c in df.columns if c.startswith(f"{target_col}_t+")]
+    all_targets = [target_col] + future_targets 
 
-        # Guardar el JSON
-        json_path = os.path.join(output_dir, f"selection_metadata_{method}.json")
-        import time
-        # Nota: Tendrás que medir el tiempo de ejecución del fit para el JSON
-        start_time = time.time()
-        selector.fit(X, y)
-        elapsed = time.time() - start_time
-    
-    if method == 'sklearn_filter':
-        method_label = f"sklearn_filter_{kwargs.get('sklearn_method')}"
-    elif method == 'weka_inspired':
-        method_label = f"weka_inspired_{kwargs.get('weka_inspired_method')}"
-    else:
-        method_label = method
-
+    # 6. Guardar el JSON de metadatos (crucial para el PredictiveEvaluator)
+    # IMPORTANTE: Ya no llamamos a selector.fit() aquí para no perder el recorte
+    json_path = os.path.join(output_dir, f"selection_metadata_{method}.json")
     save_selection_json(json_path, method_label, selected_features, all_targets, elapsed, input_file)
+    
     return {
         'selected_features': selected_features,
-        'target_columns': all_targets, # Añadido para horizonte completo
-        'json_metadata_path': json_path, # Añadido para metadatos
+        'target_columns': all_targets,
+        'json_metadata_path': json_path,
         'n_selected': len(selected_features),
-        'feature_importances': selector.get_feature_importances(),
+        'feature_importances': importances,
         'report_path': report_path,
         'plot_path': plot_path,
         'filtered_csv_path': filtered_csv_path
     }
-
 
 

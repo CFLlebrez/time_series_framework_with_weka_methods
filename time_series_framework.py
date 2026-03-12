@@ -133,78 +133,33 @@ def main():
     
     transformed_csv = output_file
     
-    # --- Paso 2: Selección de atributos (opcional) ---
+    # --- Paso 2: Selección de atributos (Optimizado con Tuning) ---
     if args.feature_selection:
-        print("\n" + "-"*40)
-        print(f"\nAplicando selección de atributos usando método '{args.fs_method}'...")
-        if args.fs_method in ['lasso', 'elastic_net']:
-            fs_results = select_features(
-                transformed_csv,
-                os.path.join(output_folder_dir, f'feature_selection_{args.fs_method}'),
-                target_col,
-                method=args.fs_method,
-                n_features=args.fs_n_features,
-                threshold=args.fs_threshold,
-                max_lag=0,           # No se prueban lags, se hace selección sobre el csv transformado
-                time_col=args.time_col,  #  ahora se informa la columna temporal
-                alpha=args.alpha if args.alpha else 1.0
-            )
-        elif args.fs_method in ['pearson', 'ccf', 'mutual_info']: # métodos basados en correlación
-            fs_results = select_features(
-                transformed_csv,
-                os.path.join(output_folder_dir, f'feature_selection_{args.fs_method}'),
-                target_col,
-                method=args.fs_method,
-                n_features=args.fs_n_features,
-                threshold=args.fs_threshold,
-                max_lag=0,           # No se prueban lags, se hace selección sobre el csv transformado
-                time_col=args.time_col,  #  ahora se informa la columna temporal
-            )
-        elif args.fs_method=='sklearn_filter':
-            fs_results = select_features(
-                transformed_csv,
-                os.path.join(output_folder_dir, f'feature_selection_{args.fs_method}_{args.sklearn_method}'),
-                target_col,
-                method=args.fs_method,
-                sklearn_method=args.sklearn_method,
-                n_features=args.fs_n_features,
-                sklearn_threshold=args.fs_threshold,
-                percentile=args.percentile,
-                strategy=args.strategy,
-                param=args.param,
-                max_lag=0,           # No se prueban lags, se hace selección sobre el csv transformado
-                time_col=args.time_col,  #  ahora se informa la columna temporal
-            )
-        elif args.fs_method=='weka_inspired':
-            fs_results = select_features(
-                transformed_csv,
-                os.path.join(output_folder_dir, f'feature_selection_{args.fs_method}_{args.weka_inspired_method}'),
-                target_col,
-                method=args.fs_method,
-                weka_inspired_method=args.weka_inspired_method,
-                n_features=args.fs_n_features,
-                weka_threshold=args.fs_threshold,
-                max_backtrack=args.fs_max_backtrack,
-                discretize=args.infogain_discretize,
-                n_bins=args.infogain_nbins,
-                n_neighbors=args.relieff_n_neighbors,
-                sample_size=args.relieff_sample_size,
-                discrete_threshold=args.relieff_discrete_threshold,
-                n_jobs=args.relieff_n_jobs,
-                max_lag=0,           # No se prueban lags, se hace selección sobre el csv transformado
-                time_col=args.time_col,  #  ahora se informa la columna temporal
-            )
-        else: # Métodos sin parámetros específicos
-            fs_results = select_features(
-                transformed_csv,
-                os.path.join(output_folder_dir, f'feature_selection_{args.fs_method}'),
-                target_col,
-                method=args.fs_method,
-                n_features=args.fs_n_features,
-                threshold=args.fs_threshold,
-                max_lag=0,           # No se prueban lags, se hace selección sobre el csv transformado
-                time_col=args.time_col,  #  ahora se informa la columna temporal
-            )
+        from tuner import get_best_fs_params
+        from feature_selection import select_features
+
+        # 1. Obtener parámetros (alpha, etc.)
+        tuned_params = get_best_fs_params(
+            args.fs_method, 
+            transformed_csv, 
+            target_col, 
+            args.time_col,
+            n_features=args.fs_n_features, # Pasamos el valor del comando
+            sklearn_method=args.sklearn_method,
+            weka_inspired_method=args.weka_inspired_method
+        )
+
+        # 2. SELECCIÓN FINAL
+        # Forzamos n_features fuera de tuned_params para que no haya duda
+        fs_results = select_features(
+            transformed_csv,
+            os.path.join(output_folder_dir, f'feature_selection_{args.fs_method}'),
+            target_col,
+            method=args.fs_method,
+            time_col=args.time_col,
+            n_features=args.fs_n_features, # <--- LO PASAMOS EXPLÍCITAMENTE AQUÍ
+            **{k: v for k, v in tuned_params.items() if k != 'n_features'} # Evitamos duplicados
+        )
 
 
         selected_features = fs_results['selected_features']

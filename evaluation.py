@@ -41,27 +41,44 @@ class PredictiveEvaluator:
         df = pd.read_csv(csv_transformed_path)
         
         # 3. Identificar todas las variables predictoras para el Baseline
-        # Excluimos targets, posibles columnas de tiempo e índices
-        all_features = [c for c in df.columns if c not in target_columns 
-                        and c.lower() != time_col]
+        # Convertimos a minúsculas para una comparación robusta
+        time_col_lower = time_col.lower() if time_col else None
+
+        # Excluimos targets y la columna de tiempo explícitamente
+        all_features = [
+            c for c in df.columns 
+            if c not in target_columns and c.lower() != time_col_lower
+        ]
+        
+        # IMPORTANTE: Asegurarnos de que en selected_features tampoco esté la columna de tiempo
+        # A veces, si el selector no es fino, podría haber incluido la fecha si no se filtró antes.
+        selected_features = [
+            c for c in selected_features 
+            if c.lower() != time_col_lower
+        ]
         
         print(f"\n" + "="*60)
         print(f"SISTEMA DE EVALUACIÓN DE PREDICCIÓN (Horizonte FH: {len(target_columns)})")
         print("="*60)
         
-        # 4. Evaluar Baseline (Todas las variables originales + lags)
+        # 4. Evaluar Baseline (Todas las variables originales + lags, sin la fecha)
         print(f"\n[PASO 1/2] Evaluando Baseline...")
         print(f"Variables utilizadas: {len(all_features)}")
         baseline_results = self._evaluate_model(df, all_features, target_columns)
         
-        # 5. Evaluar Método Seleccionado
+        # 5. Evaluar Método Seleccionado (Sin la fecha)
         print(f"\n[PASO 2/2] Evaluando Selección: {method_name}...")
         print(f"Variables utilizadas: {len(selected_features)}")
         method_results = self._evaluate_model(df, selected_features, target_columns)
         
         # 6. Generar reporte comparativo final
-        return self._generate_final_report(baseline_results, method_results, method_name, 
-                                           len(all_features), len(selected_features))
+        return self._generate_final_report(
+            baseline_results, 
+            method_results, 
+            method_name, 
+            len(all_features), 
+            len(selected_features)
+        )
 
     def _evaluate_model(self, df, feature_cols, target_cols):
         """

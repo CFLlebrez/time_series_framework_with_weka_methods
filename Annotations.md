@@ -350,3 +350,9 @@ Siguiente: Buscar la forma de generar resultados de una ejecución, evaluar las 
 - Añadido fichero para tunear parámetros, por ahora únicamente KNN.
 
 Siguiente: Añadir la función para el resto de parámetros para la selección de atributos.
+
+## 11/03/2026
+- Mejorado el fichero para tunear parámetros y corregidas inconsistencias en la columna de tiempo y el número de variables seleccionadas.
+- Hechas pruebas ciegas para ver que no daba errores.
+
+Siguiente: Realizar pruebas relevantes para comprobar el funcionamiento y la consistencia del framework. Más adelante intentar reincorporar algunos métodos descartados (CFS cambiando BFS por otra búsqueda para evaluar la medida utilizada).
