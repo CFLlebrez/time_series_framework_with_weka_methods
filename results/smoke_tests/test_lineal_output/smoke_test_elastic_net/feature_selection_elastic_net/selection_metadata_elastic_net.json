@@ -1,8 +1,8 @@
 {
     "experiment_info": {
-        "method": "lasso",
+        "method": "elastic_net",
         "input_file": "transformed_data_fv5_fh0_ph1.csv",
-        "date": "2026-03-16 20:39:03"
+        "date": "2026-03-16 20:39:07"
     },
     "selected_features": [
         "x1",
@@ -11,5 +11,5 @@
     "target_columns": [
         "target"
     ],
-    "selection_time_seconds": 0.0
+    "selection_time_seconds": 0.0047
 }

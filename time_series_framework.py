@@ -86,8 +86,7 @@ def main():
     args = parser.parse_args()
 
     input_folder_dir = os.path.join("input_csv_files", args.input_file)
-    output_folder_dir = get_unique_output_dir(args.output_dir, args.run_name)
-    
+    output_folder_dir = get_unique_output_dir(args.output_dir, args.input_file, args.run_name)    
     # Creamos la carpeta (incluyendo carpetas intermedias)
     os.makedirs(output_folder_dir, exist_ok=True)
     print(f"\n[INFO] Directorio del experimento: {output_folder_dir}")
@@ -145,35 +144,52 @@ def main():
     
     transformed_csv = output_file
     
-    # --- Paso 2: Selección de atributos (Optimizado con Tuning) ---
+# --- Paso 2: Selección de atributos (Optimizado con Tuning) ---
     if args.feature_selection:
         from tuner import get_best_fs_params
         from feature_selection import select_features
 
-        # 1. Obtener parámetros (alpha, etc.)
+        # 1. Obtener parámetros (alpha, n_neighbors, etc.)
         tuned_params = get_best_fs_params(
             args.fs_method, 
             transformed_csv, 
             target_col, 
             args.time_col,
-            n_features=args.fs_n_features, # Pasamos el valor del comando
+            n_features=args.fs_n_features,
             sklearn_method=args.sklearn_method,
             weka_inspired_method=args.weka_inspired_method
         )
 
-        # 2. SELECCIÓN FINAL
-        # Forzamos n_features fuera de tuned_params para que no haya duda
+        # 2. LIMPIEZA AGRESIVA DE PARÁMETROS (Evita TypeErrors)
+        # Creamos una copia para no alterar el original y eliminamos lo que sobra
+        fs_kwargs = tuned_params.copy()
+        
+        # 'n_features' se pasa por separado, lo quitamos de los kwargs
+        fs_kwargs.pop('n_features', None)
+        
+        # Parámetros que suelen causar colisión en métodos simples (Pearson, Mutual Info, CCF)
+        if args.fs_method in ['pearson', 'mutual_info', 'ccf', 'spearman']:
+            forbidden_keys = [
+                'sklearn_method', 'weka_inspired_method', 'n_neighbors', 
+                'alpha', 'l1_ratio', 'max_iter', 'infogain_discretize'
+            ]
+            for key in forbidden_keys:
+                fs_kwargs.pop(key, None)
+
+        # 3. SELECCIÓN FINAL
+        # Ajustamos el nombre de la carpeta de salida para que coincida con lo que el Smoke Test busca
+        # Si el Smoke Test busca en '{name}_output', aquí debemos asegurar esa ruta
+        # Nota: 'output_folder_dir' ya incluye el nombre del dataset procesado por get_unique_output_dir
+        
         fs_results = select_features(
             transformed_csv,
             os.path.join(output_folder_dir, f'feature_selection_{args.fs_method}'),
             target_col,
             method=args.fs_method,
             time_col=args.time_col,
-            n_features=args.fs_n_features, # <--- LO PASAMOS EXPLÍCITAMENTE AQUÍ
-            **{k: v for k, v in tuned_params.items() if k != 'n_features'} # Evitamos duplicados
+            n_features=args.fs_n_features,
+            **fs_kwargs
         )
-
-
         selected_features = fs_results['selected_features']
         target_columns = fs_results['target_columns']
         
@@ -240,19 +256,20 @@ def main():
     print("\nProceso completo finalizado.")
 
 
-def get_unique_output_dir(base_dir, run_name=None):
+def get_unique_output_dir(base_dir, input_file, run_name=None):
     """
-    Crea una estructura: results/nombre_dataset/run_YYYYMMDD_HHMMSS o run_name
+    Crea la estructura: base_dir / dataset_output / run_name
     """
+    dataset_name = os.path.splitext(os.path.basename(input_file))[0]
+    folder_name = f"{dataset_name}_output"
     
     if run_name:
-        # Si el usuario da un nombre, lo usamos directamente dentro de la carpeta del dataset
-        unique_path = os.path.join("results", base_dir, run_name)
+        # Resultado: results/smoke_tests / test_lineal_output / smoke_test_lasso
+        unique_path = os.path.join(base_dir, folder_name, run_name)
     else:
-        # Si no, usamos el timestamp para no sobrescribir nada
         from datetime import datetime
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        unique_path = os.path.join("results", base_dir, f"run_{timestamp}")
+        unique_path = os.path.join(base_dir, folder_name, f"run_{timestamp}")
     
     return unique_path
 

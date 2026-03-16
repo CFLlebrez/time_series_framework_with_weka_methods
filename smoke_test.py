@@ -3,7 +3,6 @@ import numpy as np
 import os
 import subprocess
 import json
-import shutil
 
 def generate_smoke_data():
     """Genera datasets sintéticos controlados."""
@@ -35,21 +34,23 @@ def generate_smoke_data():
     df_nonlin.to_csv('input_csv_files/test_sinusoidal.csv', index=False)
 
 def run_test(name, method, n_expected, fv):
-    # Obtener la ruta absoluta para evitar el error de carpetas duplicadas
+    # 1. Rutas absolutas
     current_dir = os.getcwd()
     input_path = os.path.abspath(os.path.join(current_dir, "input_csv_files", f"{name}.csv"))
-    output_base = os.path.abspath(os.path.join(current_dir, "results", "smoke_tests", f"{name}_output"))
     
-    # Asegurarnos de que el archivo existe antes de lanzar el comando
+    # Directorio base donde el framework creará la jerarquía
+    output_base = os.path.abspath(os.path.join(current_dir, "results", "smoke_tests"))
+    run_id = f"smoke_test_{method}"
+
     if not os.path.exists(input_path):
         print(f"❌ ERROR: El archivo de entrada no existe en {input_path}")
-        return
+        return False, []
 
     print(f"\n" + "="*60)
-    print(f">>> SMOKE TEST: {name.upper()} | MÉTODO: {method}")
-    print(f"Ruta: {input_path}")
+    print(f">>> EJECUTANDO: {name.upper()} | MÉTODO: {method}")
     print("="*60)
 
+    # 2. Comando para el framework
     cmd = [
         "python", "time_series_framework.py",
         input_path,             
@@ -59,26 +60,29 @@ def run_test(name, method, n_expected, fv):
         "--ph", "1",
         "--time_col", "fecha",
         "--feature_selection",
-        "--run_name", f"smoke_test_{method}",
+        "--run_name", run_id,
         "--fs_method", method,
         "--fs_n_features", str(n_expected),
         "--evaluation"           
     ]
     
     try:
-        # Usamos shell=True solo si estás en Windows y tienes problemas con las rutas, 
-        # pero con abspath no debería ser necesario.
+        # Ejecución
         process = subprocess.run(cmd, capture_output=True, text=True)
         
         if process.returncode != 0:
             print(f"❌ ERROR en el framework:\n{process.stderr}")
-            # Imprimimos también stdout por si el error está allí
-            print(f"STDOUT:\n{process.stdout}")
-            return
+            return False, []
         
-        # Validar el JSON de salida
-        # Nota: La carpeta de salida según tu framework parece ser feature_selection_{method}
-        json_path = f"results/smoke_tests/{name}_output/smoke_test_{method}/feature_selection_{method}/selection_metadata_{method}.json"
+        # 3. CONSTRUCCIÓN DE RUTA DE VALIDACIÓN (Ajustada a tu estructura)
+        # direccion_base_repositorio/results/smoke_tests/test_{tipo_test}_output/smoke_test_{metodo}
+        json_path = os.path.join(
+            output_base, 
+            f"{name}_output", 
+            run_id, 
+            f"feature_selection_{method}", 
+            f"selection_metadata_{method}.json"
+        )
 
         if os.path.exists(json_path):
             with open(json_path, 'r') as f:
@@ -86,24 +90,64 @@ def run_test(name, method, n_expected, fv):
             
             selected = meta.get('selected_features', [])
             n_actual = len(selected)
+            success = (n_actual == n_expected)
             
-            if n_actual == n_expected:
+            if success:
                 print(f"✅ ÉXITO: Seleccionados {n_actual} atributos: {selected}")
             else:
-                print(f"❌ FALLO: Se esperaban {n_expected} atributos, se obtuvieron {n_actual}.")
-                print(f"Atributos obtenidos: {selected}")
+                print(f"❌ FALLO: Se esperaban {n_expected}, se obtuvieron {n_actual}.")
+            
+            return success, selected
         else:
-            print(f"❌ ERROR: No se encontró el JSON de metadatos en: {json_path}")
+            print(f"❌ ERROR: No se encontró el JSON en: {json_path}")
+            return False, []
             
     except Exception as e:
         print(f"💥 ERROR DE EJECUCIÓN: {e}")
+        return False, []
 
-if __name__ == "__main__":        
-    generate_smoke_data()
+def run_full_battery():
+    os.makedirs('input_csv_files', exist_ok=True)
+    generate_smoke_data() # Asegúrate de que esta función esté definida arriba
+
+    # Configuración de tests
+    tests = [
+        # --- LINEALES (Dataset: test_lineal) ---
+        ("test_lineal", 5, "lasso", 2),
+        ("test_lineal", 5, "elastic_net", 2),
+        ("test_lineal", 5, "pearson", 2), # Correlación simple
+        ("test_lineal", 5, "ccf", 2),     # Correlación cruzada
+        
+        # Selectores de Sklearn (Filtros)
+        ("test_lineal", 5, "sklearn_filter", 2), # Probará SelectKBest por defecto
+        
+        # Wrappers (Lineales)
+        ("test_lineal", 5, "sequential", 2),     # Forward/Backward selection
+        
+        # --- NO LINEALES (Dataset: test_sinusoidal) ---
+        ("test_sinusoidal", 3, "random_forest", 1),
+        ("test_sinusoidal", 3, "mutual_info", 1),
+        ("test_sinusoidal", 3, "rfe", 1),          # Recursive Feature Elimination
+    ]
+
+    results_summary = []
+    for d_name, fv, method, n_exp in tests:
+        # Ahora run_test devuelve (success, selected)
+        success, selected = run_test(d_name, method, n_exp, fv)
+        
+        results_summary.append({
+            "Dataset": d_name,
+            "Metodo": method,
+            "Status": "✅ OK" if success else "❌ FAIL",
+            "Variables": ", ".join(selected) if selected else "Ninguna"
+        })
     
-    # Índices FV:
-    # test_lineal -> target está en el índice 5
-    # test_sinusoidal -> target está en el índice 3
-    
-    run_test("test_lineal", "lasso", 2, 5) 
-    run_test("test_sinusoidal", "random_forest", 1, 3)
+    # Mostrar resumen al final
+    print("\n" + "="*70)
+    print("RESUMEN DE BATERÍA DE TESTS")
+    print("="*70)
+    df_res = pd.DataFrame(results_summary)
+    print(df_res.to_string(index=False))
+
+if __name__ == "__main__":
+    run_full_battery()

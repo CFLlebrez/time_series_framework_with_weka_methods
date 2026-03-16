@@ -1,8 +1,8 @@
 {
     "experiment_info": {
-        "method": "random_forest",
+        "method": "mutual_info",
         "input_file": "transformed_data_fv3_fh0_ph1.csv",
-        "date": "2026-03-16 20:39:30"
+        "date": "2026-03-16 20:39:34"
     },
     "selected_features": [
         "x_val"
@@ -10,5 +10,5 @@
     "target_columns": [
         "target"
     ],
-    "selection_time_seconds": 0.1672
+    "selection_time_seconds": 0.0037
 }
