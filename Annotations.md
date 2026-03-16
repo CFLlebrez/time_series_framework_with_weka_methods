@@ -367,4 +367,6 @@ Probar datasets en principio de los de Pablo Reina.
     * Función para reorganizar results en runs -> IMPORTANTE: para que se guarden las comparaciones en el mismo report hay que especificar el nombre de la run y ejecutar con ese nombre todas las pruebas que se quieran incluir en esa misma carpeta.
 
 Próximo: añadir una búsqueda de parámetros más completa y óptima.
+- Corregida compatibilidad de carpetas en smoke tests y uso normal.
+- Optimización de parámetros LassoCV y ElasticNetCV.
 

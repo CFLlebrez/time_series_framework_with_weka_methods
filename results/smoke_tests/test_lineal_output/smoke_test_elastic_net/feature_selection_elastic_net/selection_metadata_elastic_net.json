@@ -2,7 +2,7 @@
     "experiment_info": {
         "method": "elastic_net",
         "input_file": "transformed_data_fv5_fh0_ph1.csv",
-        "date": "2026-03-16 20:39:07"
+        "date": "2026-03-16 20:58:13"
     },
     "selected_features": [
         "x1",
@@ -11,5 +11,5 @@
     "target_columns": [
         "target"
     ],
-    "selection_time_seconds": 0.0047
+    "selection_time_seconds": 0.2798
 }

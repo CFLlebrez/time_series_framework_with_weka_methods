@@ -17,7 +17,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Lasso, ElasticNet
 from sklearn.feature_selection import RFE
 from sklearn.preprocessing import StandardScaler
-from tqdm import tqdm
+from sklearn.linear_model import LassoCV, ElasticNetCV
 
 # Importar la clase base desde el módulo de correlación
 from .correlation_based import BaseFeatureSelector
@@ -153,13 +153,14 @@ class LassoSelector(BaseFeatureSelector):
         X_scaled = self.scaler.fit_transform(X_numeric)
         
         # Crear y entrenar el modelo
-        self.model = Lasso(
-            alpha=self.alpha,
-            max_iter=self.max_iter,
-            random_state=self.random_state
+        self.model = LassoCV(
+            cv=5, 
+            random_state=self.random_state, 
+            max_iter=self.max_iter
         )
         self.model.fit(X_scaled, y)
-        
+        if self.verbose:
+            print(f"[INFO] Alpha optimizado por LassoCV: {self.model.alpha_:.6f}")
         # Extraer coeficientes (en valor absoluto para importancia)
         self.feature_importances_ = pd.Series(
             np.abs(self.model.coef_),
@@ -236,14 +237,15 @@ class ElasticNetSelector(BaseFeatureSelector):
         X_scaled = self.scaler.fit_transform(X_numeric)
         
         # Crear y entrenar el modelo
-        self.model = ElasticNet(
-            alpha=self.alpha,
-            l1_ratio=self.l1_ratio,
-            max_iter=self.max_iter,
-            random_state=self.random_state
+        self.model = ElasticNetCV(
+            cv=5, 
+            l1_ratio=[.1, .5, .7, .9, .95, .99, 1], # Prueba diferentes mezclas L1/L2
+            random_state=self.random_state, 
+            max_iter=self.max_iter
         )
         self.model.fit(X_scaled, y)
-        
+        if self.verbose:
+            print(f"[INFO] Alpha optimizado por ElasticNetCV: {self.model.alpha_:.6f}")
         # Extraer coeficientes (en valor absoluto para importancia)
         self.feature_importances_ = pd.Series(
             np.abs(self.model.coef_),

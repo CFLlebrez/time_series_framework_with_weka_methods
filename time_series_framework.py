@@ -256,22 +256,35 @@ def main():
     print("\nProceso completo finalizado.")
 
 
-def get_unique_output_dir(base_dir, input_file, run_name=None):
+def get_unique_output_dir(output_arg, input_file, run_name=None):
     """
-    Crea la estructura: base_dir / dataset_output / run_name
+    output_arg: Lo que el usuario escribe en el comando (ej: 'osuna_clean_output')
+    input_file: El archivo de datos (ej: 'osuna_clean.csv')
     """
+    # 1. Aseguramos que la base sea siempre la carpeta 'results'
+    # Si el usuario ya puso 'results/...' lo respetamos, si no, lo añadimos
+    if not output_arg.startswith("results"):
+        base_path = os.path.join("results", output_arg)
+    else:
+        base_path = output_arg
+
+    # 2. Extraer el nombre del dataset sin extension
     dataset_name = os.path.splitext(os.path.basename(input_file))[0]
-    folder_name = f"{dataset_name}_output"
     
+    # 3. Solo añadimos la subcarpeta del dataset si el base_path NO la contiene ya
+    # Esto evita el error osuna_clean_output/osuna_clean_output
+    if dataset_name not in base_path:
+        final_base = os.path.join(base_path, f"{dataset_name}_output")
+    else:
+        final_base = base_path
+
+    # 4. Añadir el run_name o timestamp
     if run_name:
-        # Resultado: results/smoke_tests / test_lineal_output / smoke_test_lasso
-        unique_path = os.path.join(base_dir, folder_name, run_name)
+        return os.path.join(final_base, run_name)
     else:
         from datetime import datetime
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        unique_path = os.path.join(base_dir, folder_name, f"run_{timestamp}")
-    
-    return unique_path
+        return os.path.join(final_base, f"run_{timestamp}")
 
 
 if __name__ == '__main__':
