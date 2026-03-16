@@ -1,0 +1,14 @@
+{
+    "experiment_info": {
+        "method": "random_forest",
+        "input_file": "transformed_data_fv3_fh0_ph1.csv",
+        "date": "2026-03-16 19:51:16"
+    },
+    "selected_features": [
+        "x_val"
+    ],
+    "target_columns": [
+        "target"
+    ],
+    "selection_time_seconds": 0.1615
+}

@@ -356,3 +356,15 @@ Siguiente: Añadir la función para el resto de parámetros para la selección d
 - Hechas pruebas ciegas para ver que no daba errores.
 
 Siguiente: Realizar pruebas relevantes para comprobar el funcionamiento y la consistencia del framework. Más adelante intentar reincorporar algunos métodos descartados (CFS cambiando BFS por otra búsqueda para evaluar la medida utilizada).
+
+# 12/03/2026
+- REUNIÓN: Podría mejorarse la búsqueda de parámetros para los métodos aumentando el espacio de búsqueda e implementando una búsqueda más sofisticada.
+Probar datasets en principio de los de Pablo Reina.
+
+# 16/03/2026
+- Añadidos:
+    * Script para smoke tests -> ejecutar script comprueba que lasso y random forest funcionan correctamente.
+    * Función para reorganizar results en runs -> IMPORTANTE: para que se guarden las comparaciones en el mismo report hay que especificar el nombre de la run y ejecutar con ese nombre todas las pruebas que se quieran incluir en esa misma carpeta.
+
+Próximo: añadir una búsqueda de parámetros más completa y óptima.
+

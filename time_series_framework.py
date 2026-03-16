@@ -25,7 +25,8 @@ def main():
     # Argumentos para el archivo de entrada/salida
     parser.add_argument('input_file', type=str, help='Ruta al archivo CSV de entrada')
     parser.add_argument('output_dir', type=str, help='Directorio para guardar los resultados')
-    
+    parser.add_argument('--run_name', type=str, default=None, 
+                        help='Nombre personalizado para la subcarpeta del experimento (opcional)')
     # Argumentos para la transformación de series temporales
     parser.add_argument('--fv', type=int, required=True, help='Forecast Variable - índice de la columna a predecir')
     parser.add_argument('--fh', type=int, required=True, help='Forecast Horizon - número de valores futuros a predecir')
@@ -85,11 +86,22 @@ def main():
     args = parser.parse_args()
 
     input_folder_dir = os.path.join("input_csv_files", args.input_file)
-    output_folder_dir = os.path.join("results", args.output_dir)
-    os.makedirs(output_folder_dir, exist_ok=True)
+    output_folder_dir = get_unique_output_dir(args.output_dir, args.run_name)
     
-    # Cargar datos originales (solo para identificar variable objetivo)
+    # Creamos la carpeta (incluyendo carpetas intermedias)
+    os.makedirs(output_folder_dir, exist_ok=True)
+    print(f"\n[INFO] Directorio del experimento: {output_folder_dir}")
+    
+    # --- CONTINUACIÓN DEL FLUJO ---
+    # Cargar datos originales
     print(f"Cargando datos desde {input_folder_dir}...")
+    # ... (Resto de tu código de carga de DF y validación de columnas) ...
+
+    # --- CAMBIO EN LA TRANSFORMACIÓN ---
+    # El archivo transformado ahora vivirá DENTRO de la carpeta del experimento específico
+    # para asegurar que cada run sea independiente si los parámetros cambian.
+    output_file = os.path.join(output_folder_dir, f'transformed_data_fv{args.fv}_fh{args.fh}_ph{args.ph}.csv')
+
     df = pd.read_csv(input_folder_dir)
     # Verificar que la columna temporal existe
     if args.time_col not in df.columns:
@@ -226,6 +238,23 @@ def main():
             traceback.print_exc()
             
     print("\nProceso completo finalizado.")
+
+
+def get_unique_output_dir(base_dir, run_name=None):
+    """
+    Crea una estructura: results/nombre_dataset/run_YYYYMMDD_HHMMSS o run_name
+    """
+    
+    if run_name:
+        # Si el usuario da un nombre, lo usamos directamente dentro de la carpeta del dataset
+        unique_path = os.path.join("results", base_dir, run_name)
+    else:
+        # Si no, usamos el timestamp para no sobrescribir nada
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        unique_path = os.path.join("results", base_dir, f"run_{timestamp}")
+    
+    return unique_path
 
 
 if __name__ == '__main__':
