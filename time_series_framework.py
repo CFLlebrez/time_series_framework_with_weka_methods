@@ -69,6 +69,13 @@ def main():
                         help='Parámetro para ReliefF de Weka')
     parser.add_argument('--relieff_n_jobs', type=int, default=1,
                         help='Parámetro para ReliefF de Weka')
+    parser.add_argument('--relieff_pearson_prefilter', type=float, default=0.0,
+                        help='Umbral de correlación de Pearson para pre-filtrar features '
+                             'antes de construir el espacio kNN en ReliefF. '
+                             'Features con |corr| < umbral se excluyen del kNN. '
+                             'Valor 0.0 desactiva el pre-filtrado (por defecto). '
+                             'Recomendado: 0.05-0.15 para datasets con variables de '
+                             'alta varianza pero baja relevancia.')
     # Argumentos lasso and elastic net
     parser.add_argument('--alpha', type=float, default=None,
                         help='Parámetro para métodos Lasso y ElasticNet')
@@ -157,7 +164,8 @@ def main():
             args.time_col,
             n_features=args.fs_n_features,
             sklearn_method=args.sklearn_method,
-            weka_inspired_method=args.weka_inspired_method
+            weka_inspired_method=args.weka_inspired_method,
+            pearson_prefilter=args.relieff_pearson_prefilter,
         )
 
         # 2. LIMPIEZA AGRESIVA DE PARÁMETROS (Evita TypeErrors)
@@ -171,7 +179,8 @@ def main():
         if args.fs_method in ['pearson', 'mutual_info', 'ccf', 'spearman']:
             forbidden_keys = [
                 'sklearn_method', 'weka_inspired_method', 'n_neighbors', 
-                'alpha', 'l1_ratio', 'max_iter', 'infogain_discretize'
+                'alpha', 'l1_ratio', 'max_iter', 'infogain_discretize',
+                'pearson_prefilter',
             ]
             for key in forbidden_keys:
                 fs_kwargs.pop(key, None)
