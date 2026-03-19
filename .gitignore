@@ -1,6 +1,7 @@
 # Resultados y datos
 results/
-input_csv_files/*.csv
+input_csv_files/
+output_csv_files/
 temp_tuning/
 
 # Imágenes generadas
