@@ -177,13 +177,35 @@ class SequentialFeatureSelector(BaseFeatureSelector):
         self.selected_features_ = selected_features
         self.feature_scores_ = pd.Series(feature_scores)
         self.selection_history_ = selection_history
-        
-        # Calcular importancias basadas en puntuaciones
+
+        # Calcular importancias basadas en el ORDEN DE SELECCIÓN.
+        #
+        # Motivo: los scores de cross_val_score (neg_mean_squared_error) son negativos
+        # y de magnitud muy variable (pueden ser e-28 en datos con poca varianza),
+        # lo que hace que el ranking sea numéricamente inestable cuando se usan
+        # directamente como importancias en el post-procesamiento de __init__.py.
+        #
+        # El orden de selección es semánticamente correcto: en SFS, la primera feature
+        # añadida es la que más mejora el modelo por sí sola; en SBS, la última
+        # eliminada es la más prescindible. Asignamos importancias decrecientes
+        # normalizadas a [0, 1] según el orden de aparición en selection_history.
+        n_selected = len(selected_features)
         if self.direction == 'forward':
-            self.feature_importances_ = self.feature_scores_
-        else:  # backward
-            # Para selección hacia atrás, las importancias son inversas a las puntuaciones
-            self.feature_importances_ = -self.feature_scores_
+            # Orden de selección directo: el primero en history es el más importante
+            order_importance = {
+                feat: (n_selected - i) / n_selected
+                for i, (feat, _) in enumerate(selection_history)
+            }
+        else:
+            # En backward, el último eliminado es el más importante (sobrevivió más tiempo)
+            order_importance = {
+                feat: (i + 1) / max(len(selection_history), 1)
+                for i, (feat, _) in enumerate(selection_history)
+            }
+
+        # Asignar importancia 0 a las features no seleccionadas / no procesadas
+        all_importances = {f: order_importance.get(f, 0.0) for f in numeric_cols}
+        self.feature_importances_ = pd.Series(all_importances)
         
         if self.verbose:
             print(f"Selección secuencial completada. Seleccionadas {len(self.selected_features_)} características.")

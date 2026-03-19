@@ -208,22 +208,32 @@ def select_features(input_file, output_dir, target_col, method='random_forest',
     selector.fit(X, y)
     elapsed = time.time() - start_time
     
+    print(f"[INFO] Selector ajustado en {elapsed:.2f}s.")
+
     # 1. Obtener características iniciales y sus importancias
     selected_features = list(selector.get_selected_features())
     importances = selector.get_feature_importances()
-    print(f"DEBUG: Variables detectadas por el selector: {len(selected_features)}")
-    print(f"DEBUG: ¿Existen importancias?: {len(importances) > 0}")
-    print(f"DEBUG: Valor de n_features pedido: {n_features}")
     # 2. CONTROL ESTRICTO DEL NÚMERO DE ATRIBUTOS (Post-procesamiento)
-    # Si el método devuelve más de lo pedido (común en Lasso o RF), recortamos manualmente
+    # Si el método devuelve más de lo pedido (común en RF o Sequential), recortamos.
     if n_features is not None and len(selected_features) > n_features:
         if verbose:
             print(f"[POST-PROCESS] El método devolvió {len(selected_features)} variables. "
                   f"Recortando a las {n_features} más importantes según su peso.")
-        
-        # Crear un diccionario de importancia absoluta para las variables seleccionadas
+
+        # Construir diccionario de importancias absolutas para las variables seleccionadas
         feat_imp = {f: abs(importances.get(f, 0)) for f in selected_features}
-        
+
+        # Advertencia: si el rango de importancias es muy pequeño el ranking puede ser
+        # numéricamente inestable (por ejemplo, en Sequential con scores e-28 o RF con
+        # casi todas las features con importancia ~0). En ese caso el post-proceso
+        # actúa sobre un ranking poco fiable, lo que queda registrado en el log.
+        imp_values = list(feat_imp.values())
+        imp_range = max(imp_values) - min(imp_values) if imp_values else 0
+        if imp_range < 1e-10:
+            print(f"[ADVERTENCIA] El rango de importancias es muy pequeño ({imp_range:.2e}). "
+                  f"El ranking para recortar a {n_features} variables puede no ser fiable. "
+                  f"Considera revisar los parámetros del selector o usar otro método.")
+
         # Ordenar de mayor a menor y tomar exactamente n_features
         selected_features = sorted(feat_imp, key=feat_imp.get, reverse=True)[:n_features]
 
@@ -281,5 +291,3 @@ def select_features(input_file, output_dir, target_col, method='random_forest',
         'plot_path': plot_path,
         'filtered_csv_path': filtered_csv_path
     }
-
-
