@@ -1,8 +1,11 @@
 ## Cómo usar el framework?
 El comando base es<br> 
-``python time_series_framework.py ruta_fichero_entrada nombre_fichero_salida --fv valor_fv --fh valor_fh --ph valor_ph --feature_selection --fs_method metodo_seleccion --fs_n_features valor_n_features --time_col nombre_columna_tiempo
+``python time_series_framework.py ruta_fichero_entrada nombre_fichero_salida --fv indice_fv --fh valor_fh --ph valor_ph --feature_selection --fs_method metodo_seleccion --fs_n_features valor_n_features --time_col nombre_columna_tiempo
 ``<br>
-
+Para evaluación añadir los siguientes parámetros:<br>
+``--evaluation --run_name nombre_run``
+<br>
+ (nombre de la carpeta en la que se guardarán los resultados, dentro de la carpeta nombre_fichero_salida)
 El fichero de entrada lo buscará en la carpeta ``input_csv_files`` y requiere la terminación ``.csv``. El nombre del fichero de salida se refiere el nombre base del cual se partirá para generar la carpeta en ``nombre_output`` dentro de la carpeta ``results``. Esa carpeta contendrá distintas carpetas y ficheros de resultados.
 
 El parametro ``--time_col`` debe ser el nombre de la columna que indica el tiempo, ya sea fecha u hora (con otro tipo de columna de tiempo puede devolver resultados extraños).
