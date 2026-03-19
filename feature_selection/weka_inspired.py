@@ -440,7 +440,8 @@ class ReliefFSelector(BaseFeatureSelector):
     """Selector de características basado en ReliefF."""
     
     def __init__(self, n_features=None, threshold=None, n_neighbors=10, 
-                 sample_size=None, discrete_threshold=10, n_jobs=1, verbose=False):
+                 sample_size=None, discrete_threshold=10, n_jobs=1,
+                 pearson_prefilter=0.0, verbose=False):
         """
         Inicializa el selector basado en ReliefF.
         
@@ -451,6 +452,13 @@ class ReliefFSelector(BaseFeatureSelector):
             sample_size (int, optional): Tamaño de la muestra a usar (None = usar todos).
             discrete_threshold (int): Umbral para considerar una característica como discreta.
             n_jobs (int): Número de trabajos paralelos para k-NN.
+            pearson_prefilter (float): Umbral de correlación de Pearson absoluta para
+                pre-filtrar features antes de construir el espacio kNN. Features con
+                |corr(f, y)| < pearson_prefilter son excluidas del cálculo de vecinos
+                pero reciben importancia 0 y no pueden ser seleccionadas.
+                Valor 0.0 (por defecto) desactiva el pre-filtrado.
+                Recomendado: 0.05–0.15 para datasets con features de alta varianza
+                pero baja relevancia (variables de calendario, dirección del viento, etc.)
             verbose (bool, optional): Si es True, muestra información detallada.
         """
         super().__init__(n_features, threshold, verbose)
@@ -458,6 +466,7 @@ class ReliefFSelector(BaseFeatureSelector):
         self.sample_size = sample_size
         self.discrete_threshold = discrete_threshold
         self.n_jobs = n_jobs
+        self.pearson_prefilter = pearson_prefilter
     
     def fit(self, X, y=None):
         """
@@ -476,10 +485,46 @@ class ReliefFSelector(BaseFeatureSelector):
         # Filtrar solo columnas numéricas
         numeric_cols = X.select_dtypes(include=['number']).columns.tolist()
         X_numeric = X[numeric_cols]
-        
+
         if self.verbose:
-            print("Iniciando selección de características con ReliefF, sample_size:", self.sample_size, ", discrete_threshold:", self.discrete_threshold, ", n_jobs:", self.n_jobs, ", n_neighbors:", self.n_neighbors, "....")
-        
+            print(f"Iniciando selección de características con ReliefF, "
+                  f"sample_size: {self.sample_size}, discrete_threshold: {self.discrete_threshold}, "
+                  f"n_jobs: {self.n_jobs}, n_neighbors: {self.n_neighbors}, "
+                  f"pearson_prefilter: {self.pearson_prefilter} ....")
+
+        # --- PRE-FILTRADO DE PEARSON ---
+        # ReliefF construye el espacio kNN usando TODAS las features. Cuando hay
+        # variables de alta varianza pero baja relevancia (ej: DIA, DirViento),
+        # dominan el espacio de distancias y los vecinos encontrados no son
+        # similares en las dimensiones que importan para predecir y.
+        # El pre-filtrado elimina estas variables del espacio kNN, dejando que
+        # ReliefF opere en un subespacio más limpio. Las features excluidas
+        # reciben importancia 0 automáticamente al reconstruir el vector completo.
+        excluded_by_prefilter = set()
+        if self.pearson_prefilter > 0.0:
+            from scipy.stats import pearsonr
+            pearson_corrs = {}
+            for col in numeric_cols:
+                try:
+                    corr, _ = pearsonr(X_numeric[col], y)
+                    pearson_corrs[col] = abs(corr)
+                except Exception:
+                    pearson_corrs[col] = 0.0
+
+            excluded_by_prefilter = {
+                col for col, corr in pearson_corrs.items()
+                if corr < self.pearson_prefilter
+            }
+            active_cols = [c for c in numeric_cols if c not in excluded_by_prefilter]
+
+            if self.verbose and excluded_by_prefilter:
+                print(f"  [Pre-filtro Pearson < {self.pearson_prefilter}] "
+                      f"Excluidas {len(excluded_by_prefilter)} features del espacio kNN: "
+                      f"{sorted(excluded_by_prefilter)}")
+                print(f"  Features activas para ReliefF: {len(active_cols)}")
+
+            X_numeric = X_numeric[active_cols]
+
         # Determinar si la variable objetivo es discreta o continua
         if len(np.unique(y)) <= self.discrete_threshold or not np.issubdtype(y.dtype, np.number):
             # Discreto - clasificación
@@ -487,6 +532,12 @@ class ReliefFSelector(BaseFeatureSelector):
         else:
             # Continuo - regresión
             self._fit_regression(X_numeric, y)
+
+        # Reconstruir el vector de importancias completo (features excluidas = 0)
+        if excluded_by_prefilter:
+            full_importances = pd.Series(0.0, index=numeric_cols)
+            full_importances.update(self.feature_importances_)
+            self.feature_importances_ = full_importances
         
         # Seleccionar características
         if self.n_features is not None:
@@ -743,6 +794,7 @@ def create_weka_inspired_selector(method='cfs', n_features=None, threshold=None,
             sample_size=kwargs.get('sample_size', None),
             discrete_threshold=kwargs.get('discrete_threshold', 10),
             n_jobs=kwargs.get('n_jobs', 1),
+            pearson_prefilter=kwargs.get('pearson_prefilter', 0.0),
             verbose=verbose
         )
     else:
