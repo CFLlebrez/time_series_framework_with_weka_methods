@@ -60,18 +60,32 @@ class PriorityQueue:
 class CFSSelector(BaseFeatureSelector):
     """Selector de características basado en CFS (Correlation-based Feature Selection)."""
     
-    def __init__(self, n_features=None, threshold=None, max_backtrack=5, verbose=False):
+    def __init__(self, n_features=None, threshold=None, max_backtrack=5,
+                 search_strategy='bfs', target_col=None, verbose=False):
         """
         Inicializa el selector basado en CFS.
-        
+
         Args:
             n_features (int, optional): Número máximo de características a seleccionar.
+                CFS puede devolver menos si el mérito no mejora añadiendo más features.
             threshold (float, optional): Umbral para la selección de características.
-            max_backtrack (int, optional): Número máximo de retrocesos en la búsqueda.
+            max_backtrack (int, optional): Número máximo de retrocesos en BFS.
+            search_strategy (str): Estrategia de búsqueda:
+                - 'bfs': BestFirst Search, fiel a la implementación de Weka (Hall 1999).
+                  Coste exponencial acotado por max_backtrack.
+                - 'greedy': Forward greedy con mérito CFS. Añade en cada paso la feature
+                  que más aumenta el mérito. Para cuando el mérito deja de mejorar o se
+                  alcanza n_features. Coste O(n²), más escalable. Misma función objetivo
+                  que BFS pero búsqueda local.
+            target_col (str, optional): Nombre de la variable objetivo. Sus lags
+                ('{target_col}_t-*') se excluyen de las candidatas para evitar que
+                dominen el mérito CFS al tener correlación casi perfecta con el target.
             verbose (bool, optional): Si es True, muestra información detallada.
         """
         super().__init__(n_features, threshold, verbose)
         self.max_backtrack = max_backtrack
+        self.search_strategy = search_strategy
+        self.target_col = target_col
         self.feature_correlations_ = None
         self.class_correlations_ = None
         
@@ -119,15 +133,31 @@ class CFSSelector(BaseFeatureSelector):
                     corr = pointbiserialr(y_encoded, X_numeric[feature].values)
                     self.class_correlations_[feature] = abs(corr.correlation)
                 except:
-                    # En caso de error (por ejemplo, si todas las características son iguales)
                     self.class_correlations_[feature] = 0.0
         
         # Calcular matriz de correlaciones característica-característica
         corr_matrix = X_numeric.corr().abs()
         self.feature_correlations_ = corr_matrix
-        
-        # Iniciar búsqueda BestFirst
-        selected_features = self._best_first_search(numeric_cols, X_numeric, y)
+
+        # Excluir lags de la variable objetivo de las candidatas.
+        # En el dataset transformado, '{target_col}_t-N' tiene correlación casi perfecta
+        # con el target, lo que hace que su mérito como singleton sea imbatible y BFS/greedy
+        # converjan siempre a ese singleton ignorando el resto de variables.
+        candidate_cols = numeric_cols
+        if self.target_col is not None:
+            lag_prefix = f"{self.target_col}_t-"
+            excluded = [c for c in numeric_cols if c.startswith(lag_prefix)]
+            candidate_cols = [c for c in numeric_cols if not c.startswith(lag_prefix)]
+            if self.verbose and excluded:
+                print(f"  [CFS] Excluidos {len(excluded)} lags de '{self.target_col}' "
+                      f"de las candidatas: {excluded[:5]}{'...' if len(excluded) > 5 else ''}")
+                print(f"  [CFS] Features candidatas: {len(candidate_cols)}")
+
+        # Ejecutar búsqueda según estrategia
+        if self.search_strategy == 'greedy':
+            selected_features = self._greedy_forward_search(candidate_cols)
+        else:
+            selected_features = self._best_first_search(candidate_cols)
 
         # Guardar características seleccionadas
         self.selected_features_ = selected_features
@@ -182,107 +212,125 @@ class CFSSelector(BaseFeatureSelector):
         
         return (k * rcf) / denominator
     
-    def _best_first_search(self, features, X, y):
+    def _best_first_search(self, features):
         """
-        Implementa la búsqueda BestFirst para encontrar el mejor subconjunto de características.
-        
-        Args:
-            features (list): Lista de todas las características disponibles.
-            X (DataFrame): Datos de entrada.
-            y (Series): Variable objetivo.
-            
-        Returns:
-            list: Lista de características seleccionadas.
+        BestFirst Search sobre el espacio de subconjuntos con mérito CFS.
+        Fiel a la implementación de Weka (Hall, 1999).
+
+        Explora por orden de mérito: saca el nodo de mayor mérito, lo expande
+        añadiendo cada feature no incluida, y para tras max_backtrack expansiones
+        consecutivas sin mejora. Devuelve el subconjunto de máximo mérito encontrado,
+        que puede ser menor que n_features si añadir más features reduce el mérito.
         """
-        # Inicializar cola de prioridad
         queue = PriorityQueue()
-        
-        # Inicializar conjunto vacío
-        current_subset = []
-        current_merit = self._calculate_merit(current_subset)
-        
-        # Inicializar mejor subconjunto
-        best_subset = current_subset.copy()
-        best_merit = current_merit
-        
-        # Inicializar conjuntos visitados
+        queue.insert([], 0.0)
+
+        best_subset = []
+        best_merit = 0.0
+
         visited = set()
-        visited.add(tuple(sorted(current_subset)))
-        
-        # Inicializar contador de retrocesos
+        visited.add(())
+
         backtrack_count = 0
 
-        # Inicializar progreso
         if self.verbose:
             pbar = tqdm(total=100, desc="Búsqueda BestFirst")
             progress = 0
-        
-        while backtrack_count < self.max_backtrack:
-            # Generar expansiones (añadir una característica)
-            expanded = False
-            
-            for feature in features:
-                if feature not in current_subset:
-                    # Crear nuevo subconjunto añadiendo esta característica
-                    new_subset = current_subset + [feature]
-                    new_subset_tuple = tuple(sorted(new_subset))
-                    # Verificar si ya ha sido visitado
-                    if new_subset_tuple in visited:
-                        continue
-                    
-                    # Calcular mérito del nuevo subconjunto
-                    new_merit = self._calculate_merit(new_subset)
-                    
-                    # Añadir a la cola de prioridad
-                    queue.insert(new_subset, new_merit)
 
-                    # Marcar como visitado
-                    visited.add(new_subset_tuple)
-                    
-                    expanded = True
-            
-            # Si no se pudo expandir, terminar
+        while backtrack_count < self.max_backtrack and not queue.isEmpty():
+            current_subset, current_merit = queue.pop()
+
+            if current_merit > best_merit:
+                best_merit = current_merit
+                best_subset = current_subset
+                backtrack_count = 0
+            else:
+                backtrack_count += 1
+
+            # Respetar n_features como techo: no expandir si ya lo alcanzamos
+            if self.n_features is not None and len(current_subset) >= self.n_features:
+                continue
+
+            expanded = False
+            for feature in features:
+                if feature in current_subset:
+                    continue
+                new_subset = current_subset + [feature]
+                key = tuple(sorted(new_subset))
+                if key in visited:
+                    continue
+                visited.add(key)
+                new_merit = self._calculate_merit(new_subset)
+                queue.insert(new_subset, new_merit)
+                expanded = True
+
             if not expanded and queue.isEmpty():
                 break
-            
-            # Obtener siguiente subconjunto a explorar
-            if not queue.isEmpty():
-                next_item = queue.pop()
-                next_subset, next_merit = next_item
 
-                # Actualizar mejor subconjunto si es necesario
-                if next_merit > best_merit:
-                    best_subset = next_subset
-                    best_merit = next_merit
-                    backtrack_count = 0  # Reiniciar contador de retrocesos
-                else:
-                    backtrack_count += 1
-                
-                current_subset = next_subset
-                current_merit = next_merit
-            else:
-                break
-            
-            # Actualizar progreso
             if self.verbose:
                 new_progress = min(100, int((backtrack_count / self.max_backtrack) * 100))
                 if new_progress > progress:
                     pbar.update(new_progress - progress)
                     progress = new_progress
-        
-        # Cerrar barra de progreso
+
         if self.verbose:
             pbar.close()
-        
-        # Limitar número de características si es necesario
-        if self.n_features is not None and len(best_subset) > self.n_features:
-            # Ordenar por correlación con la clase
-            sorted_features = sorted(best_subset, 
-                                    key=lambda x: self.class_correlations_[x], 
-                                    reverse=True)
-            best_subset = sorted_features[:self.n_features]
-        
+            print(f"  BestFirst: subconjunto natural = {best_subset} "
+                  f"(mérito={best_merit:.4f}, {len(best_subset)} features)")
+
         return best_subset
+
+    def _greedy_forward_search(self, features):
+        """
+        Forward greedy search con mérito CFS.
+
+        En cada paso añade la feature que maximiza el incremento de mérito del
+        subconjunto actual. Para cuando:
+          - El mérito deja de mejorar (comportamiento natural de CFS).
+          - Se alcanza n_features si está definido.
+
+        Coste O(n²) frente al exponencial de BFS. Misma función objetivo (mérito CFS
+        de Hall 1999) pero búsqueda local — puede no encontrar el óptimo global.
+        Académicamente comparable a BFS para analizar el trade-off coste/calidad.
+        """
+        selected = []
+        remaining = list(features)
+        current_merit = 0.0
+
+        if self.verbose:
+            print(f"  Greedy CFS: iniciando búsqueda sobre {len(features)} candidatas...")
+
+        while remaining:
+            if self.n_features is not None and len(selected) >= self.n_features:
+                break
+
+            best_feature = None
+            best_merit = current_merit  # solo añadimos si mejora
+
+            for feature in remaining:
+                candidate = selected + [feature]
+                merit = self._calculate_merit(candidate)
+                if merit > best_merit:
+                    best_merit = merit
+                    best_feature = feature
+
+            if best_feature is None:
+                # Ninguna feature mejora el mérito — parar
+                break
+
+            selected.append(best_feature)
+            remaining.remove(best_feature)
+            current_merit = best_merit
+
+            if self.verbose:
+                print(f"  Greedy CFS: añadida '{best_feature}' "
+                      f"(mérito={current_merit:.4f}, total={len(selected)})")
+
+        if self.verbose:
+            print(f"  Greedy CFS: subconjunto final = {selected} "
+                  f"(mérito={current_merit:.4f}, {len(selected)} features)")
+
+        return selected
 
 
 class InfoGainSelector(BaseFeatureSelector):
@@ -440,8 +488,7 @@ class ReliefFSelector(BaseFeatureSelector):
     """Selector de características basado en ReliefF."""
     
     def __init__(self, n_features=None, threshold=None, n_neighbors=10, 
-                 sample_size=None, discrete_threshold=10, n_jobs=1,
-                 pearson_prefilter=0.0, verbose=False):
+                 sample_size=None, discrete_threshold=10, n_jobs=1, verbose=False):
         """
         Inicializa el selector basado en ReliefF.
         
@@ -452,13 +499,6 @@ class ReliefFSelector(BaseFeatureSelector):
             sample_size (int, optional): Tamaño de la muestra a usar (None = usar todos).
             discrete_threshold (int): Umbral para considerar una característica como discreta.
             n_jobs (int): Número de trabajos paralelos para k-NN.
-            pearson_prefilter (float): Umbral de correlación de Pearson absoluta para
-                pre-filtrar features antes de construir el espacio kNN. Features con
-                |corr(f, y)| < pearson_prefilter son excluidas del cálculo de vecinos
-                pero reciben importancia 0 y no pueden ser seleccionadas.
-                Valor 0.0 (por defecto) desactiva el pre-filtrado.
-                Recomendado: 0.05–0.15 para datasets con features de alta varianza
-                pero baja relevancia (variables de calendario, dirección del viento, etc.)
             verbose (bool, optional): Si es True, muestra información detallada.
         """
         super().__init__(n_features, threshold, verbose)
@@ -466,7 +506,6 @@ class ReliefFSelector(BaseFeatureSelector):
         self.sample_size = sample_size
         self.discrete_threshold = discrete_threshold
         self.n_jobs = n_jobs
-        self.pearson_prefilter = pearson_prefilter
     
     def fit(self, X, y=None):
         """
@@ -485,46 +524,10 @@ class ReliefFSelector(BaseFeatureSelector):
         # Filtrar solo columnas numéricas
         numeric_cols = X.select_dtypes(include=['number']).columns.tolist()
         X_numeric = X[numeric_cols]
-
+        
         if self.verbose:
-            print(f"Iniciando selección de características con ReliefF, "
-                  f"sample_size: {self.sample_size}, discrete_threshold: {self.discrete_threshold}, "
-                  f"n_jobs: {self.n_jobs}, n_neighbors: {self.n_neighbors}, "
-                  f"pearson_prefilter: {self.pearson_prefilter} ....")
-
-        # --- PRE-FILTRADO DE PEARSON ---
-        # ReliefF construye el espacio kNN usando TODAS las features. Cuando hay
-        # variables de alta varianza pero baja relevancia (ej: DIA, DirViento),
-        # dominan el espacio de distancias y los vecinos encontrados no son
-        # similares en las dimensiones que importan para predecir y.
-        # El pre-filtrado elimina estas variables del espacio kNN, dejando que
-        # ReliefF opere en un subespacio más limpio. Las features excluidas
-        # reciben importancia 0 automáticamente al reconstruir el vector completo.
-        excluded_by_prefilter = set()
-        if self.pearson_prefilter > 0.0:
-            from scipy.stats import pearsonr
-            pearson_corrs = {}
-            for col in numeric_cols:
-                try:
-                    corr, _ = pearsonr(X_numeric[col], y)
-                    pearson_corrs[col] = abs(corr)
-                except Exception:
-                    pearson_corrs[col] = 0.0
-
-            excluded_by_prefilter = {
-                col for col, corr in pearson_corrs.items()
-                if corr < self.pearson_prefilter
-            }
-            active_cols = [c for c in numeric_cols if c not in excluded_by_prefilter]
-
-            if self.verbose and excluded_by_prefilter:
-                print(f"  [Pre-filtro Pearson < {self.pearson_prefilter}] "
-                      f"Excluidas {len(excluded_by_prefilter)} features del espacio kNN: "
-                      f"{sorted(excluded_by_prefilter)}")
-                print(f"  Features activas para ReliefF: {len(active_cols)}")
-
-            X_numeric = X_numeric[active_cols]
-
+            print("Iniciando selección de características con ReliefF, sample_size:", self.sample_size, ", discrete_threshold:", self.discrete_threshold, ", n_jobs:", self.n_jobs, ", n_neighbors:", self.n_neighbors, "....")
+        
         # Determinar si la variable objetivo es discreta o continua
         if len(np.unique(y)) <= self.discrete_threshold or not np.issubdtype(y.dtype, np.number):
             # Discreto - clasificación
@@ -532,12 +535,6 @@ class ReliefFSelector(BaseFeatureSelector):
         else:
             # Continuo - regresión
             self._fit_regression(X_numeric, y)
-
-        # Reconstruir el vector de importancias completo (features excluidas = 0)
-        if excluded_by_prefilter:
-            full_importances = pd.Series(0.0, index=numeric_cols)
-            full_importances.update(self.feature_importances_)
-            self.feature_importances_ = full_importances
         
         # Seleccionar características
         if self.n_features is not None:
@@ -776,6 +773,8 @@ def create_weka_inspired_selector(method='cfs', n_features=None, threshold=None,
             n_features=n_features,
             threshold=threshold,
             max_backtrack=kwargs.get('max_backtrack', 5),
+            search_strategy=kwargs.get('search_strategy', 'bfs'),
+            target_col=kwargs.get('target_col', None),
             verbose=verbose
         )
     elif method == 'infogain':
@@ -794,7 +793,6 @@ def create_weka_inspired_selector(method='cfs', n_features=None, threshold=None,
             sample_size=kwargs.get('sample_size', None),
             discrete_threshold=kwargs.get('discrete_threshold', 10),
             n_jobs=kwargs.get('n_jobs', 1),
-            pearson_prefilter=kwargs.get('pearson_prefilter', 0.0),
             verbose=verbose
         )
     else:

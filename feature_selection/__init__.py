@@ -73,6 +73,8 @@ def create_feature_selector(method, n_features=None, threshold=None, **kwargs):
             threshold=kwargs.get('weka_threshold', 0.0),
             #CFS
             max_backtrack=kwargs.get('max_backtrack', 5),
+            search_strategy=kwargs.get('search_strategy', 'bfs'),
+            target_col=kwargs.get('target_col', None),
             #InfoGain
             n_bins=kwargs.get('n_bins', 10),
             discretize=kwargs.get('discretize', True),
@@ -196,7 +198,13 @@ def select_features(input_file, output_dir, target_col, method='random_forest',
 
     # Preparar X e y
     X, y = prepare_data_for_selection(df, target_col, include_target=include_target)
-    
+
+    # Para CFS: inyectar target_col en kwargs para que pueda excluir sus lags
+    # de las features candidatas. Se hace aquí porque select_features conoce target_col
+    # pero create_feature_selector lo recibe solo a través de kwargs.
+    if method == 'weka_inspired' and kwargs.get('weka_inspired_method') == 'cfs':
+        kwargs.setdefault('target_col', target_col)
+
     # Crear el selector
     selector = create_feature_selector(method, n_features, threshold, verbose=verbose, **kwargs)
     

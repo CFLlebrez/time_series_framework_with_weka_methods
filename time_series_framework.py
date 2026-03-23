@@ -61,6 +61,11 @@ def main():
                         help='Parámetro para InfoGain de Weka')
     parser.add_argument('--fs_max_backtrack', type=int, default=5,
                         help='Parámetro para CFS de Weka')
+    parser.add_argument('--cfs_search_strategy', type=str, default='bfs',
+                        choices=['bfs', 'greedy'],
+                        help='Estrategia de búsqueda para CFS: '
+                             'bfs (BestFirst, fiel a Weka) o '
+                             'greedy (forward greedy con mérito CFS, O(n²))')
     parser.add_argument('--relieff_sample_size', type=int, default=None,
                         help='Parámetro para CFS de Weka')
     parser.add_argument('--relieff_n_neighbors', type=int, default=10,
@@ -70,12 +75,12 @@ def main():
     parser.add_argument('--relieff_n_jobs', type=int, default=1,
                         help='Parámetro para ReliefF de Weka')
     parser.add_argument('--relieff_pearson_prefilter', type=float, default=0.0,
-                        help='Umbral de correlación de Pearson para pre-filtrar features '
-                             'antes de construir el espacio kNN en ReliefF. '
-                             'Features con |corr| < umbral se excluyen del kNN. '
-                             'Valor 0.0 desactiva el pre-filtrado (por defecto). '
-                             'Recomendado: 0.05-0.15 para datasets con variables de '
-                             'alta varianza pero baja relevancia.')
+                    help='Umbral de correlación de Pearson para pre-filtrar features '
+                            'antes de construir el espacio kNN en ReliefF. '
+                            'Features con |corr| < umbral se excluyen del kNN. '
+                            'Valor 0.0 desactiva el pre-filtrado (por defecto). '
+                            'Recomendado: 0.05-0.15 para datasets con variables de '
+                            'alta varianza pero baja relevancia.')
     # Argumentos lasso and elastic net
     parser.add_argument('--alpha', type=float, default=None,
                         help='Parámetro para métodos Lasso y ElasticNet')
@@ -166,6 +171,7 @@ def main():
             sklearn_method=args.sklearn_method,
             weka_inspired_method=args.weka_inspired_method,
             pearson_prefilter=args.relieff_pearson_prefilter,
+            search_strategy=args.cfs_search_strategy,
         )
 
         # 2. LIMPIEZA AGRESIVA DE PARÁMETROS (Evita TypeErrors)
@@ -180,7 +186,7 @@ def main():
             forbidden_keys = [
                 'sklearn_method', 'weka_inspired_method', 'n_neighbors', 
                 'alpha', 'l1_ratio', 'max_iter', 'infogain_discretize',
-                'pearson_prefilter',
+                'pearson_prefilter', 'search_strategy',
             ]
             for key in forbidden_keys:
                 fs_kwargs.pop(key, None)
